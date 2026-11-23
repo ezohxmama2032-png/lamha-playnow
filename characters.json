@@ -1,0 +1,150 @@
+{
+  "schema_version": "1.0",
+  "characters": [
+    {
+      "id": "mrbeast",
+      "name": "MrBeast",
+      "aliases": [
+        "Jimmy Donaldson"
+      ],
+      "country": "United States",
+      "category": "creator",
+      "fields": [
+        "content_creator",
+        "entrepreneur"
+      ],
+      "clues": [
+        "صانع محتوى أمريكي اشتهر بتحديات ضخمة ومبادرات خيرية.",
+        "اسم قناته الرئيسية يبدأ بكلمة Mr."
+      ],
+      "facts": [
+        "اسمه الحقيقي Jimmy Donaldson.",
+        "اشتهر بفيديوهات التحديات والمبادرات الخيرية."
+      ],
+      "sources": [
+        "https://www.youtube.com/@MrBeast"
+      ],
+      "verified": true
+    },
+    {
+      "id": "taylor-swift",
+      "name": "Taylor Swift",
+      "aliases": [],
+      "country": "United States",
+      "category": "singer",
+      "fields": [
+        "singer",
+        "songwriter"
+      ],
+      "clues": [
+        "مغنية وكاتبة أغاني أمريكية.",
+        "من أشهر ألبوماتها 1989 وMidnights."
+      ],
+      "facts": [
+        "مغنية وكاتبة أغاني أمريكية.",
+        "أصدرت ألبوم 1989 وألبوم Midnights."
+      ],
+      "sources": [
+        "https://www.taylorswift.com/"
+      ],
+      "verified": true
+    },
+    {
+      "id": "cristiano-ronaldo",
+      "name": "Cristiano Ronaldo",
+      "aliases": [
+        "CR7"
+      ],
+      "country": "Portugal",
+      "category": "athlete",
+      "fields": [
+        "footballer"
+      ],
+      "clues": [
+        "لاعب كرة قدم برتغالي.",
+        "ارتبط اسمه بالرقم 7 وبأندية أوروبية كبرى."
+      ],
+      "facts": [
+        "لاعب كرة قدم برتغالي.",
+        "يُعرف بلقب CR7."
+      ],
+      "sources": [
+        "https://www.cristianoronaldo.com/"
+      ],
+      "verified": true
+    },
+    {
+      "id": "mohamed-salah",
+      "name": "Mohamed Salah",
+      "aliases": [
+        "محمد صلاح",
+        "Mo Salah"
+      ],
+      "country": "Egypt",
+      "category": "athlete",
+      "fields": [
+        "footballer"
+      ],
+      "clues": [
+        "لاعب كرة قدم مصري.",
+        "لُقّب بالملك المصري واشتهر مع ليفربول."
+      ],
+      "facts": [
+        "لاعب كرة قدم مصري.",
+        "اشتهر عالميًا خلال مسيرته مع ليفربول."
+      ],
+      "sources": [
+        "https://www.liverpoolfc.com/"
+      ],
+      "verified": true
+    },
+    {
+      "id": "emma-watson",
+      "name": "Emma Watson",
+      "aliases": [],
+      "country": "United Kingdom",
+      "category": "actor",
+      "fields": [
+        "actor",
+        "activist"
+      ],
+      "clues": [
+        "ممثلة بريطانية.",
+        "اشتهرت بدور Hermione Granger في سلسلة Harry Potter."
+      ],
+      "facts": [
+        "ممثلة بريطانية.",
+        "أدت دور Hermione Granger في أفلام Harry Potter."
+      ],
+      "sources": [
+        "https://www.wizardingworld.com/"
+      ],
+      "verified": true
+    },
+    {
+      "id": "pewdiepie",
+      "name": "PewDiePie",
+      "aliases": [
+        "Felix Kjellberg"
+      ],
+      "country": "Sweden",
+      "category": "creator",
+      "fields": [
+        "youtuber",
+        "gaming_creator"
+      ],
+      "clues": [
+        "صانع محتوى سويدي اشتهر بفيديوهات الألعاب.",
+        "اسمه الحقيقي Felix Kjellberg."
+      ],
+      "facts": [
+        "صانع محتوى سويدي.",
+        "اسمه الحقيقي Felix Kjellberg."
+      ],
+      "sources": [
+        "https://www.youtube.com/@PewDiePie"
+      ],
+      "verified": true
+    }
+  ]
+}

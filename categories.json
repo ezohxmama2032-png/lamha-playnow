@@ -1,0 +1,34 @@
+[
+  {
+    "id": "actor",
+    "label": "ممثل / ممثلة"
+  },
+  {
+    "id": "creator",
+    "label": "صانع محتوى"
+  },
+  {
+    "id": "streamer",
+    "label": "ستريمر"
+  },
+  {
+    "id": "singer",
+    "label": "مغني / موسيقي"
+  },
+  {
+    "id": "athlete",
+    "label": "رياضي"
+  },
+  {
+    "id": "presenter",
+    "label": "إعلامي / مقدم"
+  },
+  {
+    "id": "internet_personality",
+    "label": "شخصية إنترنت"
+  },
+  {
+    "id": "other",
+    "label": "شخصية عامة"
+  }
+]
