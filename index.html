@@ -1,0 +1,2348 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1559d6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="description" content="لَمحة، لعبة تخمين ذكية تقرّبك من الإجابة سؤالًا بعد سؤال.">
+  <link rel="icon" href="brand/lam7a-favicon.svg" type="image/svg+xml">
+  <title>لَمحة | لعبة التخمين</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Tahoma, Arial, sans-serif;
+      background: #f8f9fc;
+      color: #202124;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --muted: #666b73;
+      --green: #188038;
+      --yellow: #f9ab00;
+      --blue: #2468df;
+      --red: #d93025;
+      --brand-navy: #173a72;
+      --panel: rgba(255, 255, 255, .88);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px 16px;
+      background:
+        radial-gradient(ellipse at 18% 12%, rgba(36, 104, 223, .11), transparent 38%),
+        radial-gradient(ellipse at 82% 88%, rgba(67, 151, 238, .08), transparent 38%),
+        #f8f9fc;
+    }
+
+    button, input { font: inherit; }
+
+    .shell { width: min(100%, 980px); }
+    .app-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.8fr) minmax(240px, .85fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 24px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+
+    .brand-icon {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border: 1px solid rgba(36, 104, 223, .13);
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 6px 16px rgba(36, 104, 223, .12);
+      animation: brand-arrive .7s cubic-bezier(.2, .8, .2, 1) both;
+    }
+
+    .brand-icon img { display: block; width: 34px; height: 34px; }
+    @keyframes brand-arrive {
+      from { opacity: 0; transform: rotate(-24deg) scale(.65); }
+      to { opacity: 1; transform: rotate(0) scale(1); }
+    }
+    @keyframes content-arrive {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes orb-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    @keyframes robot-think {
+      0%, 100% { transform: rotate(0); }
+      35% { transform: rotate(-4deg); }
+      70% { transform: rotate(3deg); }
+    }
+
+    h1 { margin: 0; font-size: clamp(20px, 5vw, 25px); }
+    .tagline { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+
+    .badge {
+      border: 1px solid rgba(60, 64, 67, .1);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: #5f6368;
+      background: rgba(255, 255, 255, .78);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .badge[data-state="offline"] { color: #8a4b00; border-color: rgba(249, 171, 0, .3); }
+    .badge[data-state="loading"] { color: var(--muted); }
+
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+
+    .auth-button {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--blue);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .auth-button:focus-visible, .provider-button:focus-visible, .dialog-close:focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 3px;
+    }
+
+    .sound-toggle {
+      min-height: 38px;
+      padding: 0 12px;
+      border: 1px solid rgba(60, 64, 67, .1);
+      border-radius: 999px;
+      color: #3c4043;
+      background: rgba(255, 255, 255, .86);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .auth-dialog {
+      width: min(440px, calc(100% - 32px));
+      max-height: min(90vh, 760px);
+      padding: 26px;
+      border: 1px solid rgba(60, 64, 67, .12);
+      border-radius: 24px;
+      color: #202124;
+      background: #fff;
+      box-shadow: 0 24px 80px rgba(32, 33, 36, .24);
+    }
+
+    .auth-dialog::backdrop { background: rgba(23, 35, 58, .48); backdrop-filter: blur(4px); }
+    .auth-dialog h2 { margin: 0 0 8px; font-size: 24px; }
+    .auth-dialog p { color: var(--muted); line-height: 1.8; }
+    .auth-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .dialog-close {
+      width: 38px;
+      height: 38px;
+      border: 1px solid rgba(60, 64, 67, .12);
+      border-radius: 50%;
+      color: #3c4043;
+      background: #fff;
+      cursor: pointer;
+      font-size: 20px;
+    }
+    .provider-list { display: grid; gap: 10px; margin-top: 20px; }
+    .provider-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 50px;
+      padding: 0 16px;
+      border: 1px solid rgba(60, 64, 67, .16);
+      border-radius: 14px;
+      color: #202124;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .provider-logo { flex: 0 0 20px; width: 20px; height: 20px; }
+    .provider-logo.microsoft { display: grid; grid-template-columns: repeat(2, 9px); grid-template-rows: repeat(2, 9px); gap: 2px; }
+    .provider-logo.microsoft span:nth-child(1) { background: #f35325; }
+    .provider-logo.microsoft span:nth-child(2) { background: #81bc06; }
+    .provider-logo.microsoft span:nth-child(3) { background: #05a6f0; }
+    .provider-logo.microsoft span:nth-child(4) { background: #ffba08; }
+    .provider-button:disabled { color: #777; background: #f1f3f4; cursor: not-allowed; }
+    .auth-message { min-height: 48px; margin: 14px 0 0; font-size: 13px; }
+    .auth-message[data-state="error"] { color: #b3261e; }
+    .auth-message[data-state="success"] { color: #137333; }
+
+    .sound-toggle:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+
+    main {
+      overflow: hidden;
+      min-height: 430px;
+      border: 1px solid rgba(60, 64, 67, .08);
+      border-radius: 30px;
+      background: var(--panel);
+      box-shadow: 0 10px 36px rgba(60, 64, 67, .09);
+      backdrop-filter: blur(14px);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 430px;
+      max-height: calc(100vh - 40px);
+      padding: 18px;
+      border: 1px solid rgba(60, 64, 67, .08);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, .76);
+      box-shadow: 0 10px 24px rgba(60, 64, 67, .06);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .panel-card {
+      padding: 16px;
+      border: 1px solid rgba(66, 133, 244, .08);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(242,245,255,.9));
+    }
+
+    .panel-title {
+      margin: 0 0 12px;
+      color: #3c4043;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .mini-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+
+    .mini-list li {
+      padding: 8px 10px;
+      border-radius: 10px;
+      color: #3c4043;
+      background: rgba(232, 240, 254, .55);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .mini-list span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid rgba(66, 133, 244, .14);
+      border-radius: 999px;
+      background: rgba(232, 240, 254, .72);
+      color: #3c4043;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    #game { position: relative; padding: clamp(30px, 7vw, 72px); }
+    .content { position: relative; max-width: 690px; margin: auto; text-align: center; animation: content-arrive .42s ease-out both; }
+    .mode-picker {
+      margin: 28px 0;
+      padding: 18px;
+      border: 1px solid rgba(36, 104, 223, .1);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 5% 0%, rgba(116, 185, 255, .16), transparent 34%),
+        linear-gradient(145deg, #f8faff, #fff 62%, #f6f9ff);
+      text-align: right;
+    }
+    .mode-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+    .mode-title { margin: 0; color: #263b5e; font-size: 16px; font-weight: 800; }
+    .mode-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .mode-heading-mark { color: #4a83e8; font-size: 23px; }
+    .mode-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .mode-option {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-height: 76px;
+      padding: 12px;
+      border: 1px solid rgba(60, 64, 67, .09);
+      border-radius: 18px;
+      color: #303b4e;
+      background: rgba(255, 255, 255, .88);
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(34, 57, 91, .04);
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+      text-align: right;
+    }
+    .mode-option:hover:not(:disabled) { transform: translateY(-2px); border-color: rgba(36, 104, 223, .28); box-shadow: 0 9px 18px rgba(34, 73, 132, .1); }
+    .mode-option[aria-pressed="true"] { border-color: #4b83e9; background: linear-gradient(135deg, #eaf2ff, #fff); box-shadow: 0 0 0 2px rgba(36, 104, 223, .1), 0 8px 18px rgba(36, 104, 223, .1); }
+    .mode-art { display: grid; flex: 0 0 44px; place-items: center; width: 44px; height: 44px; border-radius: 15px; background: #edf3ff; font-size: 23px; }
+    .mode-option[data-mode="animal"] .mode-art { background: #e6f4ea; }
+    .mode-option[data-mode="food"] .mode-art { background: #fff1e5; }
+    .mode-option[data-mode="object"] .mode-art { background: #f0eafe; }
+    .mode-option[data-mode="plant"] .mode-art { background: #e7f5eb; }
+    .mode-option[data-mode="person"] .mode-art { background: #fff4d8; }
+    .mode-copy { display: grid; flex: 1; gap: 4px; min-width: 0; }
+    .mode-copy strong { font-size: 13px; }
+    .mode-copy small { color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .mode-count { align-self: flex-start; padding: 4px 7px; border-radius: 999px; color: #536780; background: rgba(232, 240, 254, .82); font-size: 10px; white-space: nowrap; }
+    .mode-option[aria-pressed="true"] .mode-count { color: #174ea6; background: #d7e5ff; }
+    .mode-option:disabled { color: #80868b; background: rgba(245, 246, 248, .9); cursor: not-allowed; }
+    .mode-option:focus-visible { outline: 3px solid #8ab4f8; outline-offset: 2px; }
+    .mode-option:disabled .mode-art { filter: grayscale(.65); }
+    .hint-toggle {
+      position: absolute;
+      z-index: 1;
+      top: 14px;
+      right: 14px;
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      padding: 0;
+      border: 1px solid rgba(36, 104, 223, .22);
+      border-radius: 50%;
+      color: #fff;
+      background: linear-gradient(145deg, #55a9f5, #1559d6);
+      box-shadow: 0 5px 16px rgba(36, 104, 223, .28);
+      cursor: pointer;
+    }
+    .hint-toggle:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(36, 104, 223, .35); }
+    .hint-toggle:focus-visible { outline: 3px solid #8ab4f8; outline-offset: 3px; }
+    .hint-message {
+      margin: 18px 0 0;
+      padding: 12px 16px;
+      border: 1px solid rgba(36, 104, 223, .15);
+      border-radius: 14px;
+      color: #174ea6;
+      background: #e8f0fe;
+      line-height: 1.8;
+    }
+
+    .orb {
+      display: grid;
+      place-items: center;
+      width: 90px;
+      height: 90px;
+      margin: 0 auto 28px;
+      border: 1px solid rgba(60, 64, 67, .08);
+      border-radius: 26px;
+      color: var(--blue);
+      background: linear-gradient(145deg, #fff 15%, #e8f0fe 100%);
+      box-shadow: 0 8px 24px rgba(66, 133, 244, .12);
+      font-size: 38px;
+      animation: orb-float 4s ease-in-out infinite;
+    }
+
+    .robot-face {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 74px;
+      height: 74px;
+      border: 3px solid rgba(66, 133, 244, .4);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #eef4ff, #ffffff);
+      box-shadow: inset 0 0 0 3px rgba(255,255,255,.55), 0 8px 20px rgba(66,133,244,.12);
+      overflow: visible;
+    }
+
+    .robot-face::before {
+      position: absolute;
+      top: -10px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 0 2px rgba(255,255,255,.8);
+      content: "";
+    }
+
+    .robot-face::after {
+      position: absolute;
+      inset: -6px 10px auto 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #1559d6, #55a9f5);
+      opacity: .82;
+      content: "";
+    }
+
+    .robot-eyes {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .robot-eye {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 0 2px rgba(255,255,255,.8);
+      transform-origin: center;
+      transition: transform .2s ease, background .2s ease;
+    }
+
+    .robot-face[data-mood="thinking"] .robot-eye { background: var(--yellow); transform: scaleY(.6); }
+    .robot-face[data-mood="happy"] .robot-eye { background: var(--green); }
+    .robot-face[data-mood="confused"] .robot-eye { background: var(--red); transform: scaleY(.85); }
+    .robot-face[data-mood="sleepy"] .robot-eye { background: var(--muted); transform: scaleY(.4); }
+    .robot-face[data-mood="win"] .robot-eye { background: var(--green); transform: scale(1.15); }
+
+    .robot-mouth {
+      position: relative;
+      width: 28px;
+      height: 12px;
+      margin-top: 10px;
+      border: 3px solid rgba(66, 133, 244, .55);
+      border-top: 0;
+      border-radius: 0 0 16px 16px;
+      transition: all .2s ease;
+    }
+
+    .robot-face[data-mood="thinking"] { animation: robot-think 1.8s ease-in-out infinite; }
+
+    .robot-face[data-mood="thinking"] .robot-mouth { width: 18px; border-radius: 999px; border: 3px solid rgba(249,171,0,.8); border-top: 3px solid rgba(249,171,0,.8); }
+    .robot-face[data-mood="confused"] .robot-mouth { width: 22px; border-radius: 50%; border-top: 3px solid rgba(217,48,37,.8); border-bottom: 0; }
+    .robot-face[data-mood="sleepy"] .robot-mouth { width: 24px; height: 6px; border-radius: 999px; border-top: 0; border-bottom: 3px solid rgba(102,107,115,.9); }
+    .robot-face[data-mood="win"] .robot-mouth { width: 34px; height: 16px; border: 3px solid rgba(24,128,56,.8); border-top: 0; border-radius: 0 0 18px 18px; }
+
+    .progress {
+      width: min(100%, 420px);
+      margin: 18px auto 0;
+      padding: 6px;
+      border: 1px solid rgba(66, 133, 244, .12);
+      border-radius: 999px;
+      background: rgba(232, 240, 254, .55);
+    }
+
+    .progress-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #1559d6, #4285f4, #8ab4f8);
+      transition: width .25s ease;
+    }
+
+    .confidence-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 185px;
+      margin: 14px auto 0;
+      padding: 10px 14px;
+      border: 1px solid rgba(66, 133, 244, .14);
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(36,104,223,.09), rgba(85,169,245,.14));
+      color: #3c4043;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .confidence-box strong {
+      color: var(--blue);
+      font-size: 15px;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    h2 { margin: 0 0 16px; font-size: clamp(27px, 6vw, 40px); letter-spacing: -.5px; }
+    .welcome-title {
+      width: fit-content;
+      max-width: 100%;
+      margin-inline: auto;
+      background: linear-gradient(90deg, #1559d6, #55a9f5);
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .description { margin: 0 auto 28px; color: var(--muted); line-height: 1.9; }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .button {
+      min-height: 50px;
+      padding: 0 22px;
+      border: 1px solid rgba(60, 64, 67, .12);
+      border-radius: 999px;
+      color: #3c4043;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    .button:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(60, 64, 67, .12); }
+    .button:focus-visible, input:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+
+    .button.secondary {
+      color: #3c4043;
+      border-color: rgba(60, 64, 67, .14);
+      background: #fff;
+    }
+
+    .button.no {
+      color: var(--red);
+      border-color: rgba(217, 48, 37, .25);
+      background: #fce8e6;
+    }
+
+    .answer-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+    .answer-actions .button { min-height: 58px; padding: 10px 12px; }
+    .button.answer-likely-no { color: #1967d2; border-color: rgba(66, 133, 244, .24); background: #e8f0fe; }
+    .button.answer-possible { color: #8a5a00; border-color: rgba(249, 171, 0, .32); background: #fef7e0; }
+    .button.answer-yes { color: var(--green); border-color: rgba(52, 168, 83, .28); background: #e6f4ea; }
+    .button.answer-no { color: #b3261e; border-color: rgba(217, 48, 37, .25); background: #fce8e6; }
+    .button.answer-unknown { color: #5f6368; border-color: rgba(60, 64, 67, .16); background: #f1f3f4; }
+    .button.primary { color: #fff; border-color: transparent; background: var(--blue); box-shadow: 0 4px 12px rgba(66, 133, 244, .2); }
+
+    .question-card {
+      margin: 28px 0 10px;
+      padding: 28px 22px;
+      border: 1px solid rgba(66, 133, 244, .1);
+      border-radius: 22px;
+      background: linear-gradient(135deg, #f8faff, #fff);
+      font-size: clamp(24px, 6vw, 32px);
+      font-weight: 700;
+      line-height: 1.6;
+    }
+
+    .field { margin: 24px 0 0; text-align: right; }
+    .field label { display: block; margin-bottom: 9px; color: #3c4043; font-size: 14px; }
+
+    input {
+      width: 100%;
+      min-height: 50px;
+      padding: 12px 15px;
+      border: 1px solid rgba(60, 64, 67, .18);
+      border-radius: 14px;
+      color: #202124;
+      background: #fff;
+    }
+
+    input::placeholder { color: #80868b; }
+    .hint { margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+    .possibilities {
+      margin: 20px 0 0;
+      padding: 12px 18px;
+      border-radius: 14px;
+      color: #3c4043;
+      background: #f1f3f4;
+      line-height: 1.9;
+    }
+
+    footer { margin: 16px 0 0; color: #80868b; text-align: center; font-size: 12px; }
+
+    @media (max-width: 700px) {
+      .app-layout { grid-template-columns: minmax(0, 1fr); }
+      .sidebar { position: static; max-height: none; min-height: 0; overflow: visible; }
+    }
+
+    @media (max-width: 440px) {
+      header { align-items: flex-start; }
+      .header-actions { align-items: flex-end; flex-direction: column-reverse; gap: 7px; }
+      .badge { margin-top: 3px; }
+      #game { padding: 72px 18px 28px; }
+      .hint-toggle { top: 12px; right: 12px; }
+      .answer-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .answer-actions .button:last-child { grid-column: 1 / -1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true"><img src="brand/lam7a-mark.svg" alt=""></div>
+        <div>
+          <h1>Lam7a</h1>
+          <p class="tagline">لَمحة | لعبة تخمين ذكية، وكل إجابة تقرّبنا</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="sound-toggle" id="music-toggle" type="button" aria-pressed="true" aria-label="إيقاف موسيقى اللعبة">♫ موسيقى اللعبة مفعّلة</button>
+        <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="true" aria-label="إيقاف المؤثرات الصوتية">🔊 الصوت يعمل</button>
+        <span class="badge" id="ai-status" data-state="loading">جاري التحقق من AI...</span>
+      </div>
+    </header>
+
+
+
+    <div class="app-layout">
+      <main>
+        <section id="game" aria-live="polite"></section>
+      </main>
+      <aside class="sidebar" id="sidebar" aria-live="polite"></aside>
+    </div>
+    <footer>لَمحة بتحفظ تعلّمها على جهازك. تقدر تلعب حتى من غير إنترنت بعد أول زيارة.</footer>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "akinator-web-game-v1";
+    const SESSION_HISTORY_KEY = "lamha-session-history-v1";
+    const SOUND_KEY = "lamha-sound-enabled-v1";
+    const MUSIC_KEY = "lamha-music-enabled-v1";
+    const MAX_QUESTIONS_PER_GAME = 40;
+    const GAME_MODES = [
+      { id: "all", label: "كل الأنواع", icon: "✨" },
+      { id: "animal", label: "حيوانات", icon: "🐾" },
+      { id: "food", label: "أكل وشرب", icon: "🍓" },
+      { id: "object", label: "أشياء", icon: "🎒" },
+      { id: "plant", label: "نباتات", icon: "🌿" },
+      { id: "person", label: "شخصيات", icon: "👤" }
+    ];
+    let soundEnabled = localStorage.getItem(SOUND_KEY) !== "off";
+    let musicEnabled = localStorage.getItem(MUSIC_KEY) !== "off";
+    let selectedGameMode = "all";
+    let hintVisible = false;
+    let musicContext = null;
+    let musicGain = null;
+    let musicTimer = null;
+    const initialData = {
+      characters: [
+       [
+  { "name": "فيل", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "نعم", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "نعم", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "قطة", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "كلب", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "أسد", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "نمر", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "فهد", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "زرافة", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "حصان", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "نعم", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "حمار", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "نعم", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "جمل", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "نعم", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+  { "name": "بقرة", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+  { "name": "جاموسة", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+  { "name": "خروف", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+  { "name": "ماعز", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+  { "name": "غزال", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+  { "name": "أرنب", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+  { "name": "فأر", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "سنجاب", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "قرد", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "غوريلا", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "دب بني", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "دب قطبي", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "نعم", "هل هو ضخم؟": "نعم", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "باندا", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "كنغر", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "كوالا", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "ثعلب", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "ذئب", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "ضبع", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "وحيد القرن", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "فرس النهر", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "نعم", "هل هو ضخم؟": "نعم", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "حمار وحشي", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+  { "name": "قنفذ", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "سلحفاة بحرية", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "نعم", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "تمساح", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "نعم", "هل هو ضخم؟": "نعم", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "ثعبان", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "ضفدع", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "نعم", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "حرباء", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "نسر", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "نعم", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "صقر", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "نعم", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "بومة", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "نعم", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "حمامة", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "نعم", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+{ "name": "عصفور", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "نعم", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "ببغاء", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "نعم", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "غراب", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "نعم", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "نعامة", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "نعم", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+{ "name": "بطريق", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "نعم", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "نعم", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } },
+{ "name": "دجاجة", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "لا", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+{ "name": "بطة", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "نعم", "هل يعيش في الماء؟": "نعم", "هل هو ضخم؟": "لا", "هل له فرو؟": "لا", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "نعم", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "نعم" } },
+{ "name": "خفاش", "attributes": { "هل هو كائن حي؟": "نعم", "هل هو حيوان؟": "نعم", "هل له خرطوم؟": "لا", "هل يطير؟": "نعم", "هل يعيش في الماء؟": "لا", "هل هو ضخم؟": "لا", "هل له فرو؟": "نعم", "هل يأكل اللحوم؟": "لا", "هل هو أليف؟": "لا", "هل يُستخدم في التنقل؟": "لا", "هل يعمل بالكهرباء؟": "لا", "هل يُؤكل؟": "لا" } }
+]
+      ],
+      all_questions: ["هل هو حيوان؟", "هل له خرطوم؟", "هل يطير؟", "هل يعيش في الماء؟", "هل هو ضخم؟", "هل له فرو؟"]
+    };
+
+    const questionBank = {
+      person: "هل هو شخص؟",
+      plant: "هل هو نبات؟",
+      object: "هل هو جماد؟",
+      living: "هل هو كائن حي؟",
+      mammal: "هل هو من الثدييات؟",
+      bird: "هل هو طائر؟",
+      fish: "هل هو سمكة؟",
+      reptile: "هل هو من الزواحف؟",
+      insect: "هل هو حشرة؟",
+      wild: "هل يعيش في البرية؟",
+      domestic: "هل يمكن تربيته في البيت؟",
+      flies: "هل يطير؟",
+      swims: "هل يستطيع السباحة؟",
+      fur: "هل له فرو؟",
+      feathers: "هل له ريش؟",
+      tail: "هل له ذيل؟",
+      fourLegs: "هل له أربع أرجل؟",
+      twoLegs: "هل له رجلان؟",
+      eggs: "هل يبيض؟",
+      huge: "هل هو ضخم؟",
+      pet: "هل هو حيوان أليف؟",
+      food: "هل هو طعام؟",
+      fruit: "هل هو فاكهة؟",
+      vegetable: "هل هو خضار؟",
+      sweet: "هل طعمه حلو؟",
+      drink: "هل هو مشروب؟",
+      growsOnTree: "هل ينمو على شجرة؟",
+      furniture: "هل هو قطعة أثاث؟",
+      electronic: "هل يعمل بالكهرباء؟",
+      screen: "هل له شاشة؟",
+      wheels: "هل له عجلات؟",
+      transport: "هل نستخدمه للتنقل؟",
+      metal: "هل يحتوي على معدن؟",
+      wood: "هل يصنع عادة من الخشب؟",
+      paper: "هل يصنع من الورق؟",
+      clothing: "هل يُلبس؟",
+      musical: "هل هو آلة موسيقية؟",
+      sport: "هل يُستخدم في الرياضة؟",
+      ball: "هل هو كروي الشكل؟",
+      leaves: "هل له أوراق؟",
+      flowers: "هل له زهور؟",
+      red: "هل لونه غالبًا أحمر؟",
+      yellow: "هل لونه غالبًا أصفر؟",
+      cold: "هل يُقدَّم باردًا عادة؟",
+      hot: "هل يُقدَّم ساخنًا عادة؟",
+      dessert: "هل هو من الحلويات؟",
+      egyptian: "هل هو مصري؟",
+      athlete: "هل هو رياضي؟",
+      footballer: "هل هو لاعب كرة قدم؟",
+      playsInEurope: "هل لعب في أحد الدوريات الأوروبية؟",
+      playsInEngland: "هل لعب في الدوري الإنجليزي؟",
+      playsInGermany: "هل لعب في الدوري الألماني؟",
+      playsInSpain: "هل لعب في الدوري الإسباني؟",
+      playsInItaly: "هل لعب في الدوري الإيطالي؟",
+      playsInFrance: "هل لعب في الدوري الفرنسي؟",
+      playsInSaudi: "هل لعب في الدوري السعودي؟",
+      playsInUae: "هل لعب في الدوري الإماراتي؟",
+      egyptNationalTeam: "هل لعب لمنتخب مصر؟",
+      africanFootball: "هل هو لاعب كرة قدم أفريقي؟",
+      winsChampionsLeague: "هل فاز بدوري أبطال أوروبا؟",
+      winsWorldCup: "هل فاز بكأس العالم لكرة القدم؟",
+      playedForRealMadrid: "هل لعب لنادي ريال مدريد؟",
+      playedForBarcelona: "هل لعب لنادي برشلونة؟",
+      playedForChelsea: "هل لعب لنادي تشيلسي؟",
+      playedForArsenal: "هل لعب لنادي أرسنال؟",
+      playedForJuventus: "هل لعب لنادي يوفنتوس؟",
+      playedForBayern: "هل لعب لنادي بايرن ميونخ؟",
+      striker: "هل يلعب في مركز الهجوم؟",
+      midfielder: "هل يلعب في خط الوسط؟",
+      defender: "هل يلعب في خط الدفاع؟",
+      goalkeeper: "هل يلعب في مركز حراسة المرمى؟",
+      worldCupPlayer: "هل شارك في كأس العالم لكرة القدم؟",
+      playedForAhly: "هل لعب للنادي الأهلي؟",
+      playedForZamalek: "هل لعب لنادي الزمالك؟",
+      playedForLiverpool: "هل لعب لنادي ليفربول؟",
+      playedForManCity: "هل لعب لنادي مانشستر سيتي؟",
+      actionActor: "هل اشتهر بأدوار الأكشن؟",
+      comedyActor: "هل اشتهر بالأدوار الكوميدية؟",
+      egyptianFilm: "هل شارك في فيلم مصري؟",
+      egyptianSeries: "هل شارك في مسلسل مصري؟",
+      stageActor: "هل شارك في مسرحية؟",
+      singer: "هل هو مغنٍ؟",
+      writer: "هل هو كاتب؟",
+      actor: "هل هو ممثل؟",
+      director: "هل هو مخرج؟",
+      politician: "هل هو سياسي؟",
+      scientist: "هل هو عالم؟",
+      inventor: "هل هو مخترع؟",
+      artist: "هل هو فنان؟",
+      basketballer: "هل هو لاعب كرة سلة؟",
+      tennisPlayer: "هل هو لاعب تنس؟",
+      formulaOne: "هل هو سائق فورمولا 1؟",
+      entrepreneur: "هل هو رائد أعمال؟",
+      technology: "هل اشتهر في مجال التكنولوجيا؟",
+      fictional: "هل هو شخصية خيالية؟",
+      american: "هل هو أمريكي؟",
+      british: "هل هو بريطاني؟",
+      french: "هل هو فرنسي؟",
+      spanish: "هل هو إسباني؟",
+      argentine: "هل هو أرجنتيني؟",
+      portuguese: "هل هو برتغالي؟",
+      brazilian: "هل هو برازيلي؟",
+      indian: "هل هو هندي؟",
+      korean: "هل هو كوري؟",
+      japanese: "هل هو ياباني؟",
+      chinese: "هل هو صيني؟",
+      canadian: "هل هو كندي؟",
+      german: "هل هو ألماني؟",
+      italian: "هل هو إيطالي؟",
+      mexican: "هل هو مكسيكي؟",
+      turkish: "هل هو تركي؟",
+      australian: "هل هو أسترالي؟",
+      european: "هل عاش أو عمل في أوروبا؟",
+      contemporary: "هل هو مشهور في العصر الحديث؟",
+      deceased: "هل توفي؟",
+      nobel: "هل فاز بجائزة نوبل؟",
+      oscar: "هل فاز بجائزة أوسكار؟",
+      worldCup: "هل فاز بكأس العالم لكرة القدم؟",
+      olympics: "هل شارك في الألعاب الأولمبية؟",
+      socialMedia: "هل اشتهر عبر الإنترنت أو وسائل التواصل؟",
+      royal: "هل ينتمي إلى أسرة ملكية؟",
+      animated: "هل ظهر في فيلم أو مسلسل رسوم متحركة؟",
+      movieCharacter: "هل هو بطل في فيلم؟",
+      fantasy: "هل ينتمي إلى قصة خيالية أو عالم سحري؟",
+      smallObject: "هل يمكن حمله بيد واحدة؟",
+      outdoor: "هل يُستخدم غالبًا خارج المنزل؟",
+      indoor: "هل يُستخدم غالبًا داخل المنزل؟",
+      portable: "هل يسهل نقله؟",
+      battery: "هل يعمل ببطارية؟",
+      internet: "هل يحتاج إلى الإنترنت ليعمل؟",
+      audio: "هل يُستخدم لتسجيل الصوت أو تشغيله؟",
+      display: "هل يعرض صورًا أو معلومات؟",
+      storage: "هل يُستخدم لتخزين أشياء؟",
+      construction: "هل يُستخدم في البناء أو الإصلاح؟",
+      natural: "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟",
+      liquid: "هل هو سائل؟",
+      solid: "هل هو صلب؟",
+      growsUnderground: "هل ينمو تحت الأرض؟",
+      needsCooking: "هل يحتاج إلى طهي قبل أكله؟",
+      dairy: "هل يُصنع من الحليب؟",
+      spicy: "هل يكون حارّ الطعم عادةً؟",
+      sweetFood: "هل يكون حلو المذاق عادةً؟",
+      hotDrink: "هل يُشرب ساخنًا عادةً؟",
+      coldDrink: "هل يُشرب باردًا عادةً؟",
+      ocean: "هل يعيش أو يوجد في البحر؟",
+      desert: "هل يعيش أو ينمو في الصحراء؟",
+      night: "هل ينشط ليلًا عادةً؟",
+      endangered: "هل هو مهدد بالانقراض؟",
+      electronic: "هل يعمل بالكهرباء؟",
+      computer: "هل هو جهاز كمبيوتر أو جهاز لوحي؟",
+      communication: "هل يُستخدم للتواصل؟",
+      appliance: "هل هو جهاز منزلي؟",
+      kitchen: "هل يُستخدم عادةً في المطبخ؟",
+      cooking: "هل يُستخدم في الطهي؟",
+      tool: "هل هو أداة أو عُدّة؟",
+      toy: "هل هو لعبة؟",
+      book: "هل هو كتاب أو مجلة؟",
+      stationery: "هل يُستخدم في الكتابة أو الدراسة؟",
+      vehicle: "هل هو وسيلة مواصلات؟",
+      aircraft: "هل يطير لنقل الناس أو البضائع؟",
+      ship: "هل يُستخدم في السفر أو النقل عبر الماء؟",
+      wearable: "هل يُلبس أو يُحمل كإكسسوار؟",
+      container: "هل يُستخدم لحفظ أو حمل أشياء؟",
+      cleaning: "هل يُستخدم في التنظيف؟",
+      lighting: "هل يُستخدم للإضاءة؟",
+      plastic: "هل يحتوي عادةً على بلاستيك؟",
+      glass: "هل يحتوي عادةً على زجاج؟",
+      usedDaily: "هل يُستخدم في الحياة اليومية؟",
+      historical: "هل عاش في زمن تاريخي قديم؟",
+      real: "هل هو شخص حقيقي؟"
+    };
+
+    const questionFamilies = {
+      person: [
+        "egyptian", "athlete", "footballer", "playsInEurope", "playsInEngland", "playsInGermany",
+        "playsInSpain", "playsInItaly", "playsInFrance", "playsInSaudi", "playsInUae",
+        "egyptNationalTeam", "africanFootball", "winsChampionsLeague", "winsWorldCup",
+        "playedForRealMadrid", "playedForBarcelona", "playedForChelsea", "playedForArsenal",
+        "playedForJuventus", "playedForBayern", "striker", "midfielder", "defender", "goalkeeper",
+        "worldCupPlayer", "playedForAhly", "playedForZamalek", "playedForLiverpool", "playedForManCity",
+        "actionActor", "comedyActor", "egyptianFilm", "egyptianSeries", "stageActor", "singer", "writer",
+        "actor", "director", "politician", "scientist", "inventor", "artist", "basketballer",
+        "tennisPlayer", "formulaOne", "entrepreneur", "technology", "fictional", "american", "british",
+        "french", "spanish", "argentine", "portuguese", "brazilian", "indian", "korean", "japanese",
+        "chinese", "canadian", "german", "italian", "mexican", "turkish", "australian", "european",
+        "contemporary", "deceased", "nobel", "oscar", "worldCup", "olympics", "socialMedia", "royal",
+        "animated", "movieCharacter", "fantasy", "historical", "real"
+      ],
+      animal: [
+        "mammal", "bird", "fish", "reptile", "insect", "wild", "domestic", "flies", "swims", "fur",
+        "feathers", "tail", "fourLegs", "twoLegs", "eggs", "huge", "pet", "ocean", "desert", "night",
+        "endangered"
+      ],
+      food: [
+        "food", "fruit", "vegetable", "sweet", "drink", "growsOnTree", "cold", "hot", "dessert",
+        "liquid", "solid", "growsUnderground", "needsCooking", "dairy", "spicy", "sweetFood",
+        "hotDrink", "coldDrink"
+      ],
+      plant: ["leaves", "flowers", "growsOnTree", "natural", "growsUnderground", "desert"],
+      object: [
+        "furniture", "electronic", "screen", "wheels", "transport", "metal", "wood", "paper", "clothing",
+        "musical", "sport", "ball", "smallObject", "outdoor", "indoor", "portable", "battery", "internet",
+        "audio", "display", "storage", "construction", "computer", "communication", "appliance", "kitchen",
+        "cooking", "tool", "toy", "book", "stationery", "vehicle", "aircraft", "ship", "wearable",
+        "container", "cleaning", "lighting", "plastic", "glass", "usedDaily"
+      ]
+    };
+    const questionFamilyByText = new Map(
+      Object.entries(questionFamilies).flatMap(([family, ids]) =>
+        ids.map(id => [questionBank[id], family]).filter(([question]) => question)
+      )
+    );
+    const questionDomainByText = new Map([
+      ["هل هو شخص؟", "person"],
+      ["هل هو حيوان؟", "animal"],
+      ["هل هو نبات؟", "plant"],
+      ["هل هو جماد؟", "object"],
+      ["هل هو طعام؟", "food"],
+      ["هل هو فاكهة؟", "food"],
+      ["هل هو خضار؟", "food"],
+      ["هل هو مشروب؟", "food"],
+      ["هل هو كائن حي؟", "living"]
+    ]);
+
+    function makeSeedCharacter(name, yes, no) {
+      const attributes = {};
+      for (const id of yes) attributes[questionBank[id] || id] = "نعم";
+      for (const id of no) attributes[questionBank[id] || id] = "لا";
+      return { name, attributes };
+    }
+
+    const animalYes = ["هل هو حيوان؟", "هل هو كائن حي؟"];
+    const animalNo = ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"];
+    const objectYes = ["هل هو جماد؟"];
+    const objectNo = ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"];
+    const foodYes = [...objectYes, "هل هو طعام؟"];
+    const foodNo = ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"];
+    const seedCharacters = [
+makeSeedCharacter("فهد", [...animalYes, "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له فرو؟", "هل له ذيل؟", "هل له أربع أرجل؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟", "هل هو حيوان أليف؟"]),
+  makeSeedCharacter("حمار", [...animalYes, "هل هو من الثدييات؟", "هل يمكن تربيته في البيت؟", "هل له ذيل؟", "هل له أربع أرجل؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟", "هل له ريش؟"]),
+  makeSeedCharacter("جاموسة", [...animalYes, "هل هو من الثدييات؟", "هل يمكن تربيته في البيت؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل هو ضخم؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟"]),
+  makeSeedCharacter("غوريلا", [...animalYes, "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له فرو؟", "هل له رجلان؟", "هل هو ضخم؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يعيش في الماء؟", "هل له ذيل؟", "هل هو حيوان أليف؟"]),
+  makeSeedCharacter("كوالا", [...animalYes, "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له فرو؟", "هل له أربع أرجل؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟", "هل له ذيل؟"]),
+  makeSeedCharacter("ضبع", [...animalYes, "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له فرو؟", "هل له ذيل؟", "هل له أربع أرجل؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟", "هل هو حيوان أليف؟"]),
+  makeSeedCharacter("وحيد القرن", [...animalYes, "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل هو ضخم؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟", "هل له فرو؟"]),
+  makeSeedCharacter("فرس النهر", [...animalYes, "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل يعيش في الماء؟", "هل يستطيع السباحة؟", "هل له أربع أرجل؟", "هل هو ضخم؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل له فرو؟"]),
+  makeSeedCharacter("قنفذ", [...animalYes, "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له أربع أرجل؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟", "هل له فرو؟", "هل هو ضخم؟"]),
+  makeSeedCharacter("هامستر", [...animalYes, "هل هو من الثدييات؟", "هل يمكن تربيته في البيت؟", "هل له فرو؟", "هل له أربع أرجل؟", "هل هو حيوان أليف؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟", "هل هو ضخم؟"]),
+  makeSeedCharacter("صقر", [...animalYes, "هل هو طائر؟", "هل يستطيع الطيران؟", "هل يعيش في البرية؟", "هل له ريش؟", "هل له رجلان؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو سمكة؟", "هل يعيش في الماء؟", "هل هو حيوان أليف؟"]),
+  makeSeedCharacter("عصفور", [...animalYes, "هل هو طائر؟", "هل يستطيع الطيران؟", "هل يمكن تربيته في البيت؟", "هل له ريش؟", "هل له رجلان؟", "هل يبيض؟", "هل هو حيوان أليف؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو سمكة؟", "هل يعيش في الماء؟", "هل هو ضخم؟"]),
+  makeSeedCharacter("ببغاء", [...animalYes, "هل هو طائر؟", "هل يستطيع الطيران؟", "هل يمكن تربيته في البيت؟", "هل له ريش؟", "هل له رجلان؟", "هل يبيض؟", "هل هو حيوان أليف؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو سمكة؟", "هل يعيش في الماء؟", "هل هو ضخم؟"]),
+  makeSeedCharacter("غراب", [...animalYes, "هل هو طائر؟", "هل يستطيع الطيران؟", "هل يعيش في البرية؟", "هل له ريش؟", "هل له رجلان؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو سمكة؟", "هل يعيش في الماء؟", "هل هو حيوان أليف؟"]),
+  makeSeedCharacter("طاووس", [...animalYes, "هل هو طائر؟", "هل له ريش؟", "هل له رجلان؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟", "هل له فرو؟"]),
+  makeSeedCharacter("ديك رومي", [...animalYes, "هل هو طائر؟", "هل يمكن تربيته في البيت؟", "هل له ريش؟", "هل له رجلان؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟"]),
+  makeSeedCharacter("بجعة", [...animalYes, "هل هو طائر؟", "هل يستطيع الطيران؟", "هل له ريش؟", "هل له رجلان؟", "هل يبيض؟", "هل يستطيع السباحة؟", "هل يعيش في الماء؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو سمكة؟", "هل له فرو؟"]),
+  makeSeedCharacter("نورس", [...animalYes, "هل هو طائر؟", "هل يستطيع الطيران؟", "هل له ريش؟", "هل له رجلان؟", "هل يبيض؟", "هل يستطيع السباحة؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو سمكة؟", "هل له فرو؟"]),
+  makeSeedCharacter("فلامنجو", [...animalYes, "هل هو طائر؟", "هل يستطيع الطيران؟", "هل له ريش؟", "هل له رجلان؟", "هل يبيض؟", "هل يعيش في الماء؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو سمكة؟", "هل له فرو؟"]),
+  makeSeedCharacter("حرباء", [...animalYes, "هل هو من الزواحف؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل له فرو؟"]),
+  makeSeedCharacter("سحلية", [...animalYes, "هل هو من الزواحف؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل له فرو؟"]),
+  makeSeedCharacter("تونة", [...animalYes, "هل هو سمكة؟", "هل يعيش في الماء؟", "هل يستطيع السباحة؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل يستطيع الطيران؟", "هل له فرو؟", "هل له ريش؟"]),
+  makeSeedCharacter("سلمون", [...animalYes, "هل هو سمكة؟", "هل يعيش في الماء؟", "هل يستطيع السباحة؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل يستطيع الطيران؟", "هل له فرو؟", "هل له ريش؟"]),
+  makeSeedCharacter("سلطعون", [...animalYes, "هل يعيش في الماء؟", "هل يستطيع السباحة؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل له فرو؟", "هل له ريش؟"]),
+  makeSeedCharacter("جمبري", [...animalYes, "هل يعيش في الماء؟", "هل يستطيع السباحة؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل له فرو؟"]),
+  makeSeedCharacter("قنديل البحر", [...animalYes, "هل يعيش في الماء؟", "هل يستطيع السباحة؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل له فرو؟", "هل له ريش؟"]),
+  makeSeedCharacter("نجم البحر", [...animalYes, "هل يعيش في الماء؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل له فرو؟", "هل له ريش؟"]),
+  makeSeedCharacter("فقمة", [...animalYes, "هل هو من الثدييات؟", "هل يعيش في الماء؟", "هل يستطيع السباحة؟", "هل له ذيل؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل له ريش؟"]),
+  makeSeedCharacter("أسد البحر", [...animalYes, "هل هو من الثدييات؟", "هل يعيش في الماء؟", "هل يستطيع السباحة؟", "هل له ذيل؟"], [...animalNo, "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل له ريش؟"]),
+  makeSeedCharacter("ذبابة", [...animalYes, "هل هو حشرة؟", "هل يستطيع الطيران؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يعيش في الماء؟", "هل له ريش؟"]),
+  makeSeedCharacter("بعوضة", [...animalYes, "هل هو حشرة؟", "هل يستطيع الطيران؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يعيش في الماء؟", "هل له ريش؟"]),
+  makeSeedCharacter("صرصور", [...animalYes, "هل هو حشرة؟", "هل يستطيع الطيران؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يعيش في الماء؟", "هل له ريش؟"]),
+  makeSeedCharacter("جرادة", [...animalYes, "هل هو حشرة؟", "هل يستطيع الطيران؟", "هل يبيض؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يعيش في الماء؟", "هل له ريش؟"]),
+  makeSeedCharacter("عقرب", [...animalYes, "هل هو حشرة؟", "هل يعيش في البرية؟", "هل له ذيل؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل يعيش في الماء؟"]),
+  makeSeedCharacter("دودة", [...animalYes, "هل يعيش في البرية؟"], [...animalNo, "هل هو من الثدييات؟", "هل هو طائر؟", "هل هو سمكة؟", "هل يستطيع الطيران؟", "هل له أربع أرجل؟", "هل له رجلان؟"]),
+
+  // --- 35 جماد وأداة ومركبة وجهاز ---
+  makeSeedCharacter("أريكة", [...objectYes, "هل هو قطعة أثاث؟", "هل يصنع عادة من الخشب؟", "هل له أربع أرجل؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+  makeSeedCharacter("مكتب", [...objectYes, "هل هو قطعة أثاث؟", "هل يصنع عادة من الخشب؟", "هل له أربع أرجل؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+  makeSeedCharacter("باب", [...objectYes, "هل يصنع عادة من الخشب؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟", "هل هو كروي الشكل؟"]),
+  makeSeedCharacter("نافذة", [...objectYes, "هل يصنع عادة من الخشب؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+  makeSeedCharacter("مكيف", [...objectYes, "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟"], [...objectNo, "هل له شاشة؟", "هل هو قطعة أثاث؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+  makeSeedCharacter("ميكروويف", [...objectYes, "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟"], [...objectNo, "هل هو قطعة أثاث؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟", "هل هو آلة موسيقية؟"]),
+  makeSeedCharacter("خلاط", [...objectYes, "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟"], [...objectNo, "هل له شاشة؟", "هل هو قطعة أثاث؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+  makeSeedCharacter("مكواة", [...objectYes, "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟"], [...objectNo, "هل له شاشة؟", "هل هو قطعة أثاث؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+  makeSeedCharacter("مكنسة كهربائية", [...objectYes, "هل يعمل بالكهرباء؟", "هل له عجلات؟"], [...objectNo, "هل له شاشة؟", "هل هو قطعة أثاث؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+  makeSeedCharacter("طابعة", [...objectYes, "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟"], [...objectNo, "هل هو قطعة أثاث؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("جهاز لوحي", [...objectYes, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل يحتوي على معدن؟"], [...objectNo, "هل هو قطعة أثاث؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("ساعة ذكية", [...objectYes, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل يُلبس؟"], [...objectNo, "هل هو قطعة أثاث؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟"]),
+makeSeedCharacter("حافلة", [...objectYes, "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يحتوي على معدن؟", "هل يعمل بالكهرباء؟"], [...objectNo, "هل هو قطعة أثاث؟", "هل يصنع من الورق؟", "هل يُلبس؟"]),
+makeSeedCharacter("دراجة نارية", [...objectYes, "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يحتوي على معدن؟", "هل يعمل بالكهرباء؟"], [...objectNo, "هل له شاشة؟", "هل هو قطعة أثاث؟", "هل يُلبس؟"]),
+makeSeedCharacter("مروحية", [...objectYes, "هل نستخدمه للتنقل؟", "هل يحتوي على معدن؟", "هل يعمل بالكهرباء؟"], [...objectNo, "هل هو قطعة أثاث؟", "هل يصنع من الورق؟", "هل يُلبس؟"]),
+makeSeedCharacter("غواصة", [...objectYes, "هل نستخدمه للتنقل؟", "هل يحتوي على معدن؟", "هل يعمل بالكهرباء؟"], [...objectNo, "هل له عجلات؟", "هل هو قطعة أثاث؟", "هل يُلبس؟"]),
+makeSeedCharacter("قارب", [...objectYes, "هل نستخدمه للتنقل؟", "هل يصنع عادة من الخشب؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل هو قطعة أثاث؟", "هل يُلبس؟"]),
+makeSeedCharacter("بنطال", [...objectYes, "هل يُلبس؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يحتوي على معدن؟"]),
+makeSeedCharacter("فستان", [...objectYes, "هل يُلبس؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يحتوي على معدن؟"]),
+makeSeedCharacter("معطف", [...objectYes, "هل يُلبس؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يحتوي على معدن؟"]),
+makeSeedCharacter("جوارب", [...objectYes, "هل يُلبس؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يحتوي على معدن؟"]),
+makeSeedCharacter("نظارة", [...objectYes, "هل يُلبس؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يصنع من الورق؟"]),
+makeSeedCharacter("خاتم", [...objectYes, "هل يُلبس؟", "هل يحتوي على معدن؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟"]),
+makeSeedCharacter("كمان", [...objectYes, "هل هو آلة موسيقية؟", "هل يصنع عادة من الخشب؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("ناي", [...objectYes, "هل هو آلة موسيقية؟", "هل يصنع عادة من الخشب؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("عود", [...objectYes, "هل هو آلة موسيقية؟", "هل يصنع عادة من الخشب؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("مضرب تنس", [...objectYes, "هل يُستخدم في الرياضة؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل هو كروي الشكل؟"]),
+makeSeedCharacter("كرة سلة", [...objectYes, "هل يُستخدم في الرياضة؟", "هل هو كروي الشكل؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("شوكة", [...objectYes, "هل يحتوي على معدن؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟", "هل هو كروي الشكل؟"]),
+makeSeedCharacter("مقص", [...objectYes, "هل يحتوي على معدن؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("مطرقة", [...objectYes, "هل يحتوي على معدن؟", "هل يصنع عادة من الخشب؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("مظلة", [...objectYes, "هل يحتوي على معدن؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("خريطة", [...objectYes, "هل يصنع من الورق؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("مجلة", [...objectYes, "هل يصنع من الورق؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+makeSeedCharacter("عملة ورقية", [...objectYes, "هل يصنع من الورق؟"], [...objectNo, "هل يعمل بالكهرباء؟", "هل له شاشة؟", "هل له عجلات؟", "هل نستخدمه للتنقل؟", "هل يُلبس؟"]),
+// --- 25 طعام ومشروب ---
+makeSeedCharacter("مانجو", [...foodYes, "هل هو فاكهة؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟"], [...foodNo, "هل هو خضار؟", "هل هو مشروب؟", "هل يُقدَّم ساخنًا عادة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("رمان", [...foodYes, "هل هو فاكهة؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟", "هل لونه غالبًا أحمر؟"], [...foodNo, "هل هو خضار؟", "هل هو مشروب؟", "هل يُقدَّم ساخنًا عادة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("أناناس", [...foodYes, "هل هو فاكهة؟", "هل طعمه حلو؟"], [...foodNo, "هل هو خضار؟", "هل هو مشروب؟", "هل ينمو على شجرة؟", "هل يُقدَّم ساخنًا عادة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("خوخ", [...foodYes, "هل هو فاكهة؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟"], [...foodNo, "هل هو خضار؟", "هل هو مشروب؟", "هل يُقدَّم ساخنًا عادة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("كمثرى", [...foodYes, "هل هو فاكهة؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟"], [...foodNo, "هل هو خضار؟", "هل هو مشروب؟", "هل يُقدَّم ساخنًا عادة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("ليمون", [...foodYes, "هل هو فاكهة؟", "هل ينمو على شجرة؟", "هل لونه غالبًا أصفر؟"], [...foodNo, "هل هو خضار؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل يُقدَّم ساخنًا عادة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("بصل", [...foodYes, "هل هو خضار؟"], [...foodNo, "هل هو فاكهة؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("ثوم", [...foodYes, "هل هو خضار؟"], [...foodNo, "هل هو فاكهة؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("فلفل", [...foodYes, "هل هو خضار؟"], [...foodNo, "هل هو فاكهة؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("باذنجان", [...foodYes, "هل هو خضار؟"], [...foodNo, "هل هو فاكهة؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("كوسة", [...foodYes, "هل هو خضار؟"], [...foodNo, "هل هو فاكهة؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("خس", [...foodYes, "هل هو خضار؟", "هل يُقدَّم باردًا عادة؟"], [...foodNo, "هل هو فاكهة؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("بيتزا", [...foodYes, "هل يُقدَّم ساخنًا عادة؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("برجر", [...foodYes, "هل يُقدَّم ساخنًا عادة؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("مكرونة", [...foodYes, "هل يُقدَّم ساخنًا عادة؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("أرز", [...foodYes, "هل يُقدَّم ساخنًا عادة؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("خبز", [...foodYes], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("جبنة", [...foodYes], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل هو مشروب؟", "هل طعمه حلو؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("كعكة", [...foodYes, "هل طعمه حلو؟", "هل هو من الحلويات؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل هو مشروب؟", "هل ينمو على شجرة؟"]),
+makeSeedCharacter("بسكويت", [...foodYes, "هل طعمه حلو؟", "هل هو من الحلويات؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل هو مشروب؟", "هل ينمو على شجرة؟"]),
+makeSeedCharacter("دونات", [...foodYes, "هل طعمه حلو؟", "هل هو من الحلويات؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل هو مشروب؟", "هل ينمو على شجرة؟"]),
+makeSeedCharacter("عسل", [...foodYes, "هل طعمه حلو؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل هو مشروب؟", "هل ينمو على شجرة؟", "هل يُقدَّم ساخنًا عادة؟"]),
+makeSeedCharacter("شاي", [...foodYes, "هل هو مشروب؟", "هل يُقدَّم ساخنًا عادة؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل ينمو على شجرة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("حليب", [...foodYes, "هل هو مشروب؟", "هل يُقدَّم باردًا عادة؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل ينمو على شجرة؟", "هل هو من الحلويات؟"]),
+makeSeedCharacter("ماء", [...foodYes, "هل هو مشروب؟", "هل يُقدَّم باردًا عادة؟"], [...foodNo, "هل هو فاكهة؟", "هل هو خضار؟", "هل طعمه حلو؟", "هل ينمو على شجرة؟", "هل هو من الحلويات؟"]),
+    ];
+    // Expanded launch database: additions bring each category to 100 entries.
+    const expandedCharacters = [
+      makeSeedCharacter("بانثر", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("وشق", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("قط بري", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("وشق كندي", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("دب أسود", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("دب الشمس", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("دب الكسلان", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ثعلب قطبي", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ثعلب الفنك", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ابن آوى", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كلب بري أفريقي", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ضبع مخطط", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("وشق أحمر", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ظبي", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("وعل", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("لاما", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ألبكة", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كودو", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("بيسون", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ثور المسك", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("غرير", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("قضاعة", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("قندس", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("خفاش الفاكهة", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("دلفين", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("حوت أزرق", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("حوت قاتل", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("قرش أبيض", ["هل هو حيوان؟", "هل هو كائن حي؟", "هل هو من الثدييات؟", "هل يعيش في البرية؟", "هل له ذيل؟", "هل له أربع أرجل؟", "هل يأكل اللحوم؟"], ["هل هو شخص؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("تفاح", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("موز", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("توت بري", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فراولة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("توت", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كرز", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بطيخ", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("شمام", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("جوافة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("تين", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مشمش", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("برقوق", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كيوي", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بابايا", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("جوز هند", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("تمر", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بلح", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("زبيب", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فول سوداني", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("لوز", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("جوز", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فستق", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بندق", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كاجو", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("شوفان", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("قمح", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ذرة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("عدس", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فول مدمس", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("حمص", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فاصوليا", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بازلاء", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بطاطس", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بطاطا حلوة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("جزر", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("خيار", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("طماطم", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("قرنبيط", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بروكلي", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("سبانخ", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ملوخية", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بامية", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فطر", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("زيتون", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مخلل", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فلافل", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كشري", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("محشي", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ملوخية مطبوخة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("شوربة عدس", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فتة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كفتة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كباب", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فراخ مشوية", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("سمك مشوي", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("تونة معلبة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بيض مسلوق", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("أومليت", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("لبنة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("زبادي", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("آيس كريم", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مهلبية", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("أرز باللبن", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كنافة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("قطايف", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بسبوسة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("جلاش", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("شوكولاتة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مربى", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("عصير برتقال", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("عصير تفاح", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("قهوة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("نسكافيه", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ليمونادة", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("سحلب", ["هل هو جماد؟", "هل هو طعام؟", "هل هو فاكهة؟", "هل طعمه حلو؟", "هل يُقدَّم باردًا عادة؟", "هل يحتاج إلى طهي قبل أكله؟", "هل هو من الحلويات؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كرسي", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("سرير", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("دولاب", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("رف", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كنبة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ترابيزة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مكتبة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مرآة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("سجادة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ستارة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مصباح", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("نجفة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مروحة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ثلاجة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("غسالة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فرن", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بوتاجاز", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("غلاية", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("محضرة طعام", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("شاشة تلفزيون", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("هاتف محمول", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("حاسوب محمول", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("حاسوب مكتبي", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("لوحة مفاتيح", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فأرة كمبيوتر", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("سماعة رأس", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ميكروفون", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كاميرا", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("شاحن", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كابل USB", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("راوتر", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ريموت كنترول", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مصباح يدوي", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("بطارية", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ساعة حائط", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("منبه", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("حقيبة ظهر", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("محفظة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("حذاء", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("قبعة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("حزام", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("وشاح", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("قميص", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("تيشيرت", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("تنورة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("قفاز", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("زجاجة مياه", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كوب", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("طبق", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("وعاء", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("قدر", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مقلاة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ملعقة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("سكين مطبخ", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("لوح تقطيع", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("علبة طعام", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("سلة مهملات", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مكنسة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("ممسحة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("فرشاة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("صابون", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("منشفة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مفتاح", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("قفل", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مسمار", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("مفك", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("كماشة", ["هل هو جماد؟", "هل يعمل بالكهرباء؟", "هل يحتوي على معدن؟", "هل يُستخدم غالبًا داخل المنزل؟", "هل يُستخدم في الحياة اليومية؟", "هل يمكن حمله بيد واحدة؟", "هل يُستخدم في المطبخ؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو نبات؟", "هل هو كائن حي؟"]),
+      makeSeedCharacter("شجرة زيتون", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة ليمون", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة برتقال", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة تفاح", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة مانجو", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة نخيل", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة جوز", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة لوز", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة تين", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة رمان", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة خوخ", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة مشمش", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة كرز", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة كمثرى", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة جوافة", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة أفوكادو", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة كاكاو", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة قهوة", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة مطاط", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة بلوط", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة صنوبر", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة أرز", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة سرو", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة صفصاف", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة أكاسيا", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة كافور", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة جميز", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة توت", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة موز", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شجرة بابايا", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ورد جوري", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ياسمين", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("فل", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("زنبق", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("توليب", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("دوار الشمس", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("قرنفل", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أقحوان", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("لافندر", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ريحان", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("نعناع", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("بقدونس", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كزبرة", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شبت", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("زعتر", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("مريمية", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("إكليل الجبل", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("جرجير", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("صبار", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ألوفيرا", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("صبار التين الشوكي", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("سرخس", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("طحلب", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("لبلاب", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("متسلق الجهنمية", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ياسمين هندي", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ريحان مقدس", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("خزامى", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("نبات الثعبان", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("بوتس", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("مونستيرا", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("فيكس", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("دراسينا", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ديفنباخيا", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("زاميا", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أنثوريوم", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أوركيد", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كالا", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("جلاديولس", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("نرجس", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("سوسن", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شقائق النعمان", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("خشخاش", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كركديه", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("قطن", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كتان", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("قصب السكر", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("قمح كنبات", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شعير", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أرز كنبات", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ذرة كنبات", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("فول الصويا", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("نبات الفول", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("عدس كنبات", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("حمص كنبات", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("فول سوداني كنبات", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("سمسم", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("دوار الشمس كنبات", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("خيزران", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("بردي", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("لوتس", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("زنبق الماء", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("مانجروف", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كرمة العنب", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("فراولة كنبات", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("توت أرضي", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شمام كنبات", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("بطيخ كنبات", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("قرع", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("يقطين", ["هل هو نبات؟", "هل هو كائن حي؟", "هل له أوراق؟", "هل يوجد في الطبيعة دون أن يصنعه الإنسان؟", "هل ينمو على شجرة؟", "هل له زهور؟", "هل ينمو في التربة؟"], ["هل هو حيوان؟", "هل هو شخص؟", "هل هو جماد؟"]),
+      makeSeedCharacter("محمد صلاح", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("محمود تريزيجيه", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("عمر مرموش", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("محمد الشناوي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أحمد سيد زيزو", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("حسام حسن", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("محمد أبو تريكة", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("حسن شحاتة", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("مجدي يعقوب", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أحمد زويل", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("مصطفى مشرفة", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("نجيب محفوظ", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("طه حسين", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أم كلثوم", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("عبد الحليم حافظ", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("محمد منير", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("عمرو دياب", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("تامر حسني", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("عادل إمام", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أحمد حلمي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("محمد هنيدي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("منى زكي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("يسرا", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كريم عبد العزيز", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أحمد السقا", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("محمد رمضان", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("إسماعيل ياسين", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("فؤاد المهندس", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("صلاح جاهين", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("يوسف شاهين", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ليونيل ميسي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كريستيانو رونالدو", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كيليان مبابي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("نيمار", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("إيرلينغ هالاند", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كيفن دي بروين", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("محمد بنزيما", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("لوكا مودريتش", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("زين الدين زيدان", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("بيب جوارديولا", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("يورغن كلوب", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أنطوان غريزمان", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("هاري كين", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("فينيسيوس جونيور", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("لامين يامال", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("روبرت ليفاندوفسكي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("سيرجيو راموس", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("مانويل نوير", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("مايكل جوردان", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ليبرون جيمس", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("رافاييل نادال", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("نوفاك ديوكوفيتش", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("روجر فيدرر", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("تايلور سويفت", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("إد شيران", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أديل", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("بيونسيه", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ريهانا", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شاكيرا", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("جاستن بيبر", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("إيمينيم", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ذا ويكند", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ليوناردو دي كابريو", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("توم كروز", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ويل سميث", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("جوني ديب", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("روبرت داوني جونيور", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كيانو ريفز", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أنجلينا جولي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("سكارليت جوهانسون", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("إيما واتسون", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("جاكي شان", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شاروخان", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("أميتاب باتشان", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ألبرت أينشتاين", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("إسحاق نيوتن", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ماري كوري", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("توماس إديسون", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("نيكولا تسلا", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ستيف جوبز", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("بيل غيتس", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("مارك زوكربيرغ", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("إيلون ماسك", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("تشارلز داروين", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ليوناردو دافنشي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ويليام شكسبير", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("جبران خليل جبران", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ابن سينا", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("الخوارزمي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("ابن الهيثم", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("صلاح الدين الأيوبي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("نيلسون مانديلا", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("مارتن لوثر كينغ", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("غاندي", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("نابليون بونابرت", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("كليوباترا", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("توت عنخ آمون", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("شخصية سبايدرمان", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("باتمان", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+      makeSeedCharacter("سوبرمان", ["هل هو شخص؟", "هل هو كائن حي؟", "هل هو شخص حقيقي؟", "هل هو مشهور؟", "هل ظهر في وسائل الإعلام؟", "هل هو رجل؟", "هل هو من الشخصيات المعروفة؟"], ["هل هو حيوان؟", "هل هو نبات؟", "هل هو جماد؟"]),
+    ];
+    // Letter clues are always accurate and help separate similarly classified entries.
+    const launchLetters = [..."ابتثجحخدذرزسشصضطظعغفقكلمنهوي"];
+    for (const character of expandedCharacters) {
+      for (const letter of launchLetters) {
+        character.attributes[`هل يبدأ اسمه بحرف ${letter}؟`] = character.name.startsWith(letter) ? "نعم" : "لا";
+      }
+      character.attributes["هل يتكون اسمه من أكثر من كلمة؟"] = character.name.trim().includes(" ") ? "نعم" : "لا";
+    }
+    seedCharacters.push(...expandedCharacters);
+    initialData.all_questions = [...new Set([...initialData.all_questions, ...Object.values(questionBank)])];
+    initialData.characters = initialData.characters.flat();
+    const defaultCharacters = new Map(initialData.characters.map(character => [character.name, character]));
+    for (const character of seedCharacters) {
+      const existing = defaultCharacters.get(character.name);
+      defaultCharacters.set(character.name, existing
+        ? { ...existing, attributes: { ...character.attributes, ...existing.attributes } }
+        : character);
+    }
+    initialData.characters = [...defaultCharacters.values()];
+    // Keep only valid, uniquely named entries and normalize their attributes.
+    initialData.characters = [...new Map(initialData.characters
+      .filter(item => item && typeof item.name === "string" && item.name.trim() && item.attributes && typeof item.attributes === "object")
+      .map(item => [item.name.trim(), { name: item.name.trim(), attributes: item.attributes }])).values()];
+    initialData.all_questions = [...new Set([...initialData.all_questions, ...initialData.characters.flatMap(item => Object.keys(item.attributes || {}))])];
+
+    const game = document.querySelector("#game");
+    const sidebar = document.querySelector("#sidebar");
+    let gameData = loadGameData();
+    let stage = "home";
+    let candidates = [];
+    let askedQuestions = new Set();
+    let askedAttributes = new Set();
+    let currentQuestion = "";
+    let currentQuestionAttribute = "";
+    let wrongGuess = null;
+    let targetCharacter = null;
+    let newQuestion = "";
+    let remainingQuestions = [];
+    let history = [];
+    let questionRequestId = 0;
+    let hasQuestionRequestResult = false;
+    let activeSessionLabel = "جلسة جديدة";
+
+    function loadGameData() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return structuredClone(initialData);
+        const data = JSON.parse(saved);
+        if (Array.isArray(data.characters) && Array.isArray(data.all_questions)) {
+          const characters = new Map(initialData.characters.map(character => [
+            character.name,
+            { ...character, attributes: { ...character.attributes } }
+          ]));
+          for (const character of data.characters) {
+            if (typeof character.name !== "string" || !character.attributes || typeof character.attributes !== "object") continue;
+            const existing = characters.get(character.name);
+            characters.set(character.name, {
+              name: character.name,
+              attributes: { ...(existing?.attributes || {}), ...character.attributes }
+            });
+          }
+          return {
+            characters: [...characters.values()],
+            all_questions: [...new Set([...initialData.all_questions, ...data.all_questions.filter(question => typeof question === "string")])]
+          };
+        }
+      } catch (error) {
+        console.error("تعذر قراءة بيانات اللعبة المحفوظة:", error);
+      }
+      return structuredClone(initialData);
+    }
+
+    function saveGameData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(gameData));
+      } catch (error) {
+        console.warn("تعذر حفظ بيانات اللعبة على هذا الجهاز:", error);
+      }
+    }
+
+    function loadSessionHistory() {
+      try {
+        const saved = localStorage.getItem(SESSION_HISTORY_KEY);
+        return saved ? JSON.parse(saved) : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveSessionHistory(historyEntries) {
+      try {
+        localStorage.setItem(SESSION_HISTORY_KEY, JSON.stringify(historyEntries));
+      } catch (error) {
+        console.warn("تعذر حفظ سجل الجلسات:", error);
+      }
+    }
+
+    function renderSidebar() {
+      const sessionHistory = loadSessionHistory();
+      const recentRuns = sessionHistory.slice(0, 5);
+      const recentGuesses = sessionHistory
+        .flatMap(entry => entry.guesses || [])
+        .slice(0, 6);
+
+      const runItems = recentRuns.length
+        ? recentRuns.map(run => `
+            <li>
+              ${escapeHtml(run.label)}
+              <span>${escapeHtml(run.status)} · ${run.questions} أسئلة</span>
+            </li>
+          `).join("")
+        : '<li><span>لا توجد تجارب بعد</span></li>';
+
+      const guessItems = recentGuesses.length
+        ? recentGuesses.map(guess => `<li>${escapeHtml(guess)}<span>تخمين سابق</span></li>`).join("")
+        : '<li><span>لا توجد تخمينات سابقة</span></li>';
+
+      sidebar.innerHTML = `
+        <div class="panel-card">
+          <div class="user-pill" id="user-pill">👤 ضيف</div>
+        </div>
+        <div class="panel-card">
+          <p class="panel-title">التجارب</p>
+          <ul class="mini-list">${runItems}</ul>
+        </div>
+        <div class="panel-card">
+          <p class="panel-title">التخمينات الفائتة</p>
+          <ul class="mini-list">${guessItems}</ul>
+        </div>
+      `;
+    }
+
+    function registerSessionRun(label, status, questions) {
+      const historyEntries = loadSessionHistory();
+      const entry = { label, status, questions, timestamp: new Date().toISOString() };
+      historyEntries.unshift(entry);
+      saveSessionHistory(historyEntries.slice(0, 12));
+    }
+
+    function rememberGuess(name) {
+      const historyEntries = loadSessionHistory();
+      if (!historyEntries.length) historyEntries.push({ label: "جلسة جديدة", status: "جديدة", questions: 0, guesses: [] });
+      const entry = historyEntries[0];
+      if (!entry.guesses) entry.guesses = [];
+      entry.guesses.unshift(name);
+      entry.guesses = entry.guesses.slice(0, 8);
+      saveSessionHistory(historyEntries.slice(0, 12));
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[character]);
+    }
+
+    function questionText(question) {
+      return question.replace(/^هل\s*/, "").replace(/[؟?]\s*$/, "");
+    }
+
+    function button(label, action, style = "") {
+      return `<button class="button ${style}" type="button" data-action="${action}">${label}</button>`;
+    }
+
+    function getRobotMood(stage = "question") {
+      if (stage === "home") return "sleepy";
+      if (stage === "loading-question") return "thinking";
+      if (stage === "question") {
+        const step = askedQuestions.size;
+        if (step < 2) return "thinking";
+        if (step < 5) return "confused";
+        if (step < 8) return "happy";
+        return "win";
+      }
+      if (stage === "guess") return "happy";
+      if (stage === "learn-name" || stage === "learn-question" || stage === "learn-answer" || stage === "learn-attributes") return "thinking";
+      if (stage === "learned" || stage === "correct") return "win";
+      return "happy";
+    }
+
+    function renderRobotFace(stage = "question") {
+      const mood = getRobotMood(stage);
+      return `
+        <div class="robot-face" data-mood="${mood}" aria-hidden="true">
+          <div class="robot-eyes">
+            <span class="robot-eye"></span>
+            <span class="robot-eye"></span>
+          </div>
+          <div class="robot-mouth"></div>
+        </div>
+      `;
+    }
+
+    function computeConfidence() {
+      const totalCandidates = Math.max(1, candidates.length || 1);
+      const step = askedQuestions.size || 0;
+      const derived = 100 - (totalCandidates * 12) - (step * 6);
+      return Math.min(96, Math.max(18, derived));
+    }
+
+    function computeQuestionProgress() {
+      return Math.min(100, Math.round(((askedQuestions.size + 1) / MAX_QUESTIONS_PER_GAME) * 100));
+    }
+
+    function getCharacterMode(character) {
+      const attributes = character.attributes || {};
+      const hasYes = question => attributes[question] === "نعم";
+      const hasFamilyYes = family => Object.entries(attributes).some(([question, answer]) =>
+        answer === "نعم" && questionFamilyByText.get(question) === family
+      );
+      if (hasYes("هل هو طعام؟") || hasFamilyYes("food")) return "food";
+      if (hasYes("هل هو شخص؟") || hasFamilyYes("person")) return "person";
+      if (hasYes("هل هو حيوان؟") || hasFamilyYes("animal")) return "animal";
+      if (hasYes("هل هو نبات؟") || hasFamilyYes("plant")) return "plant";
+      if (hasYes("هل هو جماد؟") || hasFamilyYes("object")) return "object";
+      return "";
+    }
+
+    function getCharactersForMode(mode) {
+      return mode === "all"
+        ? gameData.characters.filter(character => typeof character.name === "string" && character.name.trim())
+        : gameData.characters.filter(character =>
+          typeof character.name === "string" && character.name.trim() && getCharacterMode(character) === mode
+        );
+    }
+
+    function getHintText() {
+      const outcomes = new Map();
+      for (const character of candidates) {
+        for (const [question, answer] of Object.entries(character.attributes || {})) {
+          const family = questionFamilyByText.get(question);
+          if (
+            askedAttributes.has(question)
+            || questionDomainByText.has(question)
+            || (selectedGameMode !== "all" && family && family !== selectedGameMode)
+            || (answer !== "نعم" && answer !== "لا")
+          ) continue;
+          const counts = outcomes.get(question) || { yes: 0, no: 0 };
+          counts[answer === "نعم" ? "yes" : "no"] += 1;
+          outcomes.set(question, counts);
+        }
+      }
+      const hint = [...outcomes]
+        .map(([question, counts]) => {
+          const known = counts.yes + counts.no;
+          const answer = counts.yes >= counts.no ? "yes" : "no";
+          return { question, ...counts, known, answer, consensus: counts[answer] / known };
+        })
+        .filter(({ known, consensus }) =>
+          known >= Math.ceil(candidates.length * 0.6) && consensus >= 0.6
+        )
+        .sort((first, second) =>
+          second.consensus - first.consensus || second.known - first.known
+        )[0];
+      if (hint) {
+        const answerCount = hint[hint.answer];
+        const answerText = hint.answer === "yes" ? "موجودة" : "مش موجودة";
+        return `تلميح: الصفة «${questionText(hint.question)}» ${answerText} عند ${answerCount} من أصل ${hint.known} احتمال عندي.`;
+      }
+      return "لسه الاحتمالات متقاربة. إجابتك على السؤال الحالي هتساعدني أضيّقها.";
+    }
+
+    function playTone(frequency, duration, type = "sine", volume = 0.025) {
+      if (!soundEnabled) return;
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return;
+      try {
+        const audioContext = new AudioCtor();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(volume, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration / 1000);
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start();
+        setTimeout(() => {
+          oscillator.stop();
+          audioContext.close().catch(error => console.warn("تعذر إغلاق الصوت", error));
+        }, duration);
+      } catch (error) {
+        console.warn("تعذر تشغيل الصوت", error);
+      }
+    }
+
+    function updateSoundToggle() {
+      const toggle = document.querySelector("#sound-toggle");
+      toggle.setAttribute("aria-pressed", String(soundEnabled));
+      toggle.setAttribute("aria-label", soundEnabled ? "إيقاف المؤثرات الصوتية" : "تشغيل المؤثرات الصوتية");
+      toggle.textContent = soundEnabled ? "🔊 الصوت يعمل" : "🔇 الصوت متوقف";
+    }
+
+    function updateMusicToggle() {
+      const toggle = document.querySelector("#music-toggle");
+      toggle.setAttribute("aria-pressed", String(musicEnabled));
+      toggle.setAttribute("aria-label", musicEnabled ? "إيقاف موسيقى اللعبة" : "تشغيل موسيقى اللعبة");
+      toggle.textContent = musicEnabled ? "♫ موسيقى اللعبة مفعّلة" : "♫ موسيقى اللعبة متوقفة";
+    }
+
+    function playMusicNote(context, frequency, duration, volume, wave = "sine") {
+      const oscillator = context.createOscillator();
+      const filter = context.createBiquadFilter();
+      const gain = context.createGain();
+      const start = context.currentTime;
+      oscillator.type = wave;
+      oscillator.frequency.value = frequency;
+      filter.type = "lowpass";
+      filter.frequency.value = wave === "triangle" ? 1100 : 2400;
+      filter.Q.value = 0.35;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + (wave === "triangle" ? 0.55 : 0.16));
+      gain.gain.setTargetAtTime(0.0001, start + duration - 0.3, wave === "triangle" ? 0.2 : 0.1);
+      oscillator.connect(filter);
+      filter.connect(gain);
+      gain.connect(musicGain);
+      oscillator.onended = () => {
+        oscillator.disconnect();
+        filter.disconnect();
+        gain.disconnect();
+      };
+      oscillator.start(start);
+      oscillator.stop(start + duration);
+    }
+
+    function startMusic() {
+      if (!musicEnabled || musicContext) return;
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) {
+        console.warn("متصفحك لا يدعم تشغيل موسيقى اللعبة.");
+        return;
+      }
+
+      const context = new AudioCtor();
+      musicContext = context;
+      musicGain = context.createGain();
+      musicGain.gain.value = 0.13;
+      musicGain.connect(context.destination);
+
+      const melody = [
+        523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 523.25, 0,
+        587.33, 659.25, 783.99, 880, 783.99, 659.25, 587.33, 0
+      ];
+      const chords = [
+        { root: 130.81, notes: [261.63, 329.63, 392, 493.88] },
+        { root: 196, notes: [293.66, 392, 493.88, 587.33] },
+        { root: 110, notes: [261.63, 329.63, 440, 523.25] },
+        { root: 174.61, notes: [261.63, 349.23, 440, 523.25] }
+      ];
+      let step = 0;
+      const playNextStep = () => {
+        if (musicContext !== context || !musicEnabled) return;
+        if (step % 4 === 0) {
+          const chord = chords[Math.floor(step / 4) % chords.length];
+          playMusicNote(context, chord.root, 2.05, 0.02, "sine");
+          for (const note of chord.notes) {
+            playMusicNote(context, note, 2.05, 0.007, "triangle");
+          }
+        }
+        const note = melody[step % melody.length];
+        if (note) playMusicNote(context, note, 0.48, 0.025, "sine");
+        step += 1;
+        musicTimer = setTimeout(playNextStep, 520);
+      };
+
+      context.resume().then(() => {
+        if (musicContext === context && musicEnabled) playNextStep();
+      }).catch(error => console.warn("تعذر تشغيل موسيقى اللعبة:", error));
+    }
+
+    function stopMusic() {
+      if (musicTimer !== null) {
+        clearTimeout(musicTimer);
+        musicTimer = null;
+      }
+      if (!musicContext) return;
+      const context = musicContext;
+      musicContext = null;
+      musicGain = null;
+      context.close().catch(error => console.warn("تعذر إيقاف موسيقى اللعبة:", error));
+    }
+
+    function setAiStatus(message, state) {
+      const badge = document.querySelector("#ai-status");
+      badge.textContent = message;
+      badge.dataset.state = state;
+    }
+
+    async function refreshAiStatus() {
+      try {
+        const response = await fetch("/api/status");
+        const status = await response.json();
+        if (hasQuestionRequestResult) return;
+        if (status.ready) {
+          setAiStatus(
+            status.provider === "Local" ? "وضع محلي · بدون AI" : "AI جاهز · " + status.model,
+            "ready"
+          );
+        } else {
+          setAiStatus("AI غير جاهز", "offline");
+        }
+      } catch (error) {
+        if (!hasQuestionRequestResult) setAiStatus("وضع محلي · بدون اتصال", "ready");
+      }
+    }
+
+    function startGame() {
+      candidates = getCharactersForMode(selectedGameMode);
+      askedQuestions = new Set();
+      askedAttributes = new Set();
+      history = [];
+      wrongGuess = null;
+      hintVisible = false;
+      activeSessionLabel = "جلسة جديدة";
+      playTone(660, 120, "triangle", 0.02);
+      startMusic();
+      advanceGame();
+    }
+
+    function advanceGame() {
+      if (candidates.length === 0) {
+        beginLearning(null);
+        return;
+      }
+      if (candidates.length === 1) {
+        stage = "guess";
+        render();
+        return;
+      }
+      if (askedQuestions.size >= MAX_QUESTIONS_PER_GAME) {
+        stage = "guess";
+        render();
+        return;
+      }
+      requestNextQuestion();
+    }
+
+    function getDistinguishingAttributes() {
+      const outcomes = new Map();
+      const { domain, excludedDomains } = getQuestionDomainContext();
+      for (const character of candidates) {
+        for (const [question, answer] of Object.entries(character.attributes || {})) {
+          if (
+            askedAttributes.has(question)
+            || (answer !== "نعم" && answer !== "لا")
+            || !isQuestionAllowedForDomain(question, domain, excludedDomains)
+          ) continue;
+          const knownAnswers = outcomes.get(question) || { yes: 0, no: 0 };
+          knownAnswers[answer === "نعم" ? "yes" : "no"] += 1;
+          outcomes.set(question, knownAnswers);
+        }
+      }
+      return [...outcomes]
+        .filter(([, answers]) => answers.yes > 0 && answers.no > 0)
+        .slice(0, 80)
+        .map(([question]) => question);
+    }
+
+    function getQuestionDomainContext() {
+      let domain = "";
+      const excludedDomains = new Set();
+      for (const entry of history) {
+        const attribute = entry.attribute_key || entry.question;
+        const category = questionDomainByText.get(attribute);
+        if (!category) continue;
+        if (entry.answer === "نعم") {
+          domain = category;
+          excludedDomains.delete(category);
+        } else if (entry.answer === "لا") {
+          excludedDomains.add(category);
+          if (domain === category) domain = "";
+        }
+      }
+      return { domain, excludedDomains };
+    }
+
+    function isQuestionAllowedForDomain(question, domain, excludedDomains) {
+      const questionDomain = questionDomainByText.get(question);
+      if (questionDomain) {
+        if (excludedDomains.has(questionDomain)) return false;
+        if (!domain) return true;
+        if (domain === "living") return ["living", "person", "animal", "plant"].includes(questionDomain);
+        if (domain === "object") return questionDomain === "object" || questionDomain === "food";
+        return questionDomain === domain;
+      }
+      const family = questionFamilyByText.get(question);
+      if (!family) return true;
+      if (excludedDomains.has(family)) return false;
+      if (!domain) return false;
+      if (domain === "living") return ["person", "animal", "plant"].includes(family);
+      return family === domain;
+    }
+
+    function getBestLocalQuestion(candidateAttributes) {
+      let bestAttribute = "";
+      let bestScore = 0;
+      const { domain } = getQuestionDomainContext();
+      const categoryQuestions = candidateAttributes.filter(question => questionDomainByText.has(question));
+      const prioritizedQuestions = !domain || domain === "living" || domain === "object"
+        ? categoryQuestions
+        : [];
+      const questionsToScore = prioritizedQuestions.length ? prioritizedQuestions : candidateAttributes;
+      for (const attribute of questionsToScore) {
+        const yesCount = candidates.filter(character => character.attributes?.[attribute] === "نعم").length;
+        const noCount = candidates.filter(character => character.attributes?.[attribute] === "لا").length;
+        const score = Math.min(yesCount, noCount);
+        if (score > bestScore) {
+          bestAttribute = attribute;
+          bestScore = score;
+        }
+      }
+      return bestAttribute;
+    }
+
+    async function requestNextQuestion() {
+      const requestId = ++questionRequestId;
+      const candidateAttributes = getDistinguishingAttributes();
+      currentQuestionAttribute = "";
+      stage = "loading-question";
+      render();
+
+      try {
+        const response = await fetch("/api/next-question", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            history,
+            candidates: candidates.slice(0, 40).map(character => ({
+              name: character.name,
+              attributes: Object.fromEntries(
+                Object.entries(character.attributes || {})
+                  .filter(([question, answer]) => !askedQuestions.has(question) && (answer === "نعم" || answer === "لا"))
+                  .slice(0, 8)
+              )
+            })),
+            candidate_count: candidates.length,
+            candidate_attributes: candidateAttributes,
+            asked_questions: [...askedQuestions],
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "تعذر الحصول على سؤال من الذكاء الاصطناعي.");
+        const question = result.question;
+        if (
+          typeof question !== "string"
+          || askedQuestions.has(question)
+          || typeof result.attribute_key !== "string"
+          || !candidateAttributes.includes(result.attribute_key)
+        ) {
+          throw new Error("الذكاء الاصطناعي أعاد سؤالاً غير صالح أو غير مرتبط بسمة معروفة.");
+        }
+        currentQuestion = question;
+        currentQuestionAttribute = result.attribute_key;
+        hasQuestionRequestResult = true;
+        setAiStatus("السؤال جاهز", "ready");
+      } catch (error) {
+        console.warn("تعذر إنشاء السؤال بالذكاء الاصطناعي:", error);
+        if (requestId !== questionRequestId) return;
+        hasQuestionRequestResult = true;
+        const fallbackQuestion = getBestLocalQuestion(candidateAttributes);
+        if (fallbackQuestion) {
+          currentQuestion = fallbackQuestion;
+          currentQuestionAttribute = fallbackQuestion;
+          setAiStatus("وضع محلي · بدون AI", "ready");
+          stage = "question";
+          render();
+          return;
+        }
+        setAiStatus("وضع محلي · تخمين", "ready");
+        if (candidates.length) {
+          stage = "guess";
+        } else {
+          beginLearning(null);
+          return;
+        }
+        render();
+        return;
+      }
+
+      if (requestId !== questionRequestId) return;
+      stage = "question";
+      render();
+    }
+
+    function answerQuestion(answer) {
+      hintVisible = false;
+      askedQuestions.add(currentQuestion);
+      if (currentQuestionAttribute) askedAttributes.add(currentQuestionAttribute);
+      history.push({ question: currentQuestion, answer, attribute_key: currentQuestionAttribute });
+      const frequency = answer === "نعم" ? 620 : answer === "لا" ? 340 : answer === "الظاهر لا" ? 250 : 200;
+      playTone(frequency, 90, answer === "نعم" ? "triangle" : "sine", 0.03);
+      const attributeKey = currentQuestionAttribute || currentQuestion;
+      if (answer === "نعم" || answer === "لا") {
+        candidates = candidates.filter(character => {
+          const characterAnswer = character.attributes?.[attributeKey];
+          return characterAnswer === answer || (characterAnswer !== "نعم" && characterAnswer !== "لا");
+        });
+      } else if (answer === "الظاهر لا") {
+        candidates.sort((first, second) =>
+          Number(second.attributes?.[attributeKey] === "لا") -
+          Number(first.attributes?.[attributeKey] === "لا")
+        );
+      }
+      if (candidates.length === 0) {
+        beginLearning(null);
+      } else {
+        advanceGame();
+      }
+    }
+
+    function beginLearning(guessedCharacter) {
+      wrongGuess = guessedCharacter;
+      stage = "learn-name";
+      render();
+    }
+
+    function submitName(name) {
+      const cleanName = name.trim();
+      if (!cleanName) return;
+      targetCharacter = gameData.characters.find(character => character.name === cleanName);
+      if (!targetCharacter) {
+        targetCharacter = { name: cleanName, attributes: {} };
+        gameData.characters.push(targetCharacter);
+      }
+      stage = "learn-question";
+      render();
+    }
+
+    function submitDistinguishingQuestion(question) {
+      newQuestion = question.trim();
+      if (!newQuestion) return;
+      if (!gameData.all_questions.includes(newQuestion)) {
+        gameData.all_questions.push(newQuestion);
+      }
+      stage = "learn-answer";
+      render();
+    }
+
+    function finishLearning(answer) {
+      targetCharacter.attributes[newQuestion] = answer;
+      if (wrongGuess) {
+        const guessed = gameData.characters.find(character => character.name === wrongGuess);
+        if (guessed) guessed.attributes[newQuestion] = answer === "نعم" ? "لا" : "نعم";
+      }
+      const learningScores = gameData.all_questions.map(question => {
+        const knownYes = gameData.characters.filter(character =>
+          character !== targetCharacter && character.attributes[question] === "نعم"
+        ).length;
+        const knownNo = gameData.characters.filter(character =>
+          character !== targetCharacter && character.attributes[question] === "لا"
+        ).length;
+        return { question, score: knownYes && knownNo ? Math.min(knownYes, knownNo) : 0 };
+      });
+      remainingQuestions = learningScores
+        .filter(({ question, score }) =>
+          score > 0 && targetCharacter.attributes[question] !== "نعم" && targetCharacter.attributes[question] !== "لا"
+        )
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map(({ question }) => question);
+      if (remainingQuestions.length) {
+        stage = "learn-attributes";
+      } else {
+        completeLearning();
+        return;
+      }
+      render();
+    }
+
+    function answerRemainingQuestion(answer) {
+      const question = remainingQuestions.shift();
+      targetCharacter.attributes[question] = answer;
+      if (remainingQuestions.length) {
+        render();
+      } else {
+        completeLearning();
+      }
+    }
+
+    function completeLearning() {
+      saveGameData();
+      registerSessionRun(targetCharacter.name, "تمت إضافة شخصية جديدة", askedQuestions.size + remainingQuestions.length + 1);
+      rememberGuess(targetCharacter.name);
+      stopMusic();
+      stage = "learned";
+      render();
+    }
+
+    function render() {
+      renderSidebar();
+      if (stage === "home") {
+        const modes = GAME_MODES.map(mode => {
+          const count = mode.id === "all" ? getCharactersForMode("all").length : getCharactersForMode(mode.id).length;
+          const unavailable = count === 0;
+          const descriptions = {
+            all: "خلّي لَمحة تختار من كل الاحتمالات",
+            animal: "من الكائنات الأليفة والبرية",
+            food: "أكلات ومشروبات متنوعة",
+            object: "أدوات وأشياء من حولك",
+            plant: "أشجار ونباتات من الطبيعة",
+            person: "شخصيات حقيقية وخيالية"
+          };
+          const description = unavailable ? "لسه مفيش احتمالات للنوع ده" : descriptions[mode.id];
+          return `<button class="mode-option" type="button" data-action="select-mode" data-mode="${mode.id}" aria-pressed="${selectedGameMode === mode.id}" ${unavailable ? "disabled" : ""}>
+            <span class="mode-art" aria-hidden="true">${mode.icon}</span>
+            <span class="mode-copy"><strong>${mode.label}</strong><small>${description}</small></span>
+            <span class="mode-count">${count} احتمال</span>
+          </button>`;
+        }).join("");
+        game.innerHTML = `
+          <div class="content">
+            <div class="orb" aria-hidden="true">${renderRobotFace("home")}</div>
+            <h2 class="welcome-title">فكّر في حاجة تحب أكتشفها</h2>
+            <p class="description">فكّر في شخصية مشهورة، حيوان، مكان أو أي حاجة في بالك. هسألك أسئلة مناسبة واحدة واحدة لحد ما أوصل لتخمين.</p>
+            <div class="mode-picker">
+              <div class="mode-heading">
+                <div><p class="mode-title">اختار عالم الجولة</p><p class="mode-subtitle">اضغط على النوع اللي في بالك عشان نبدأ</p></div>
+                <span class="mode-heading-mark" aria-hidden="true">✦</span>
+              </div>
+              <div class="mode-options" role="group" aria-label="اختار نوع الجولة">${modes}</div>
+            </div>
+          </div>`;
+      } else if (stage === "loading-question") {
+        const progress = computeQuestionProgress();
+        const confidence = Math.round(computeConfidence());
+        game.innerHTML = `
+          <div class="content">
+            <div class="orb" aria-hidden="true">${renderRobotFace("loading-question")}</div>
+            <p class="eyebrow">لَمحة بتفكّر</p>
+            <h2>بختار سؤال مناسب</h2>
+            <p class="description">بختار سؤالًا مناسبًا من المعلومات المتاحة عن الاحتمالات.</p>
+            <div class="progress" aria-label="تقدّم اللعبة">
+              <div class="progress-bar" style="width: ${progress}%"></div>
+            </div>
+            <div class="confidence-box"><span>تقدير الجولة</span><strong>${confidence}%</strong></div>
+          </div>`;
+      } else if (stage === "ai-error") {
+        game.innerHTML = `
+          <div class="content">
+            <div class="orb" aria-hidden="true">${renderRobotFace("question")}</div>
+            <p class="eyebrow">محتاجين معلومات أكتر</p>
+            <h2>مش لاقي سؤال يفرّق بين الاحتمالات</h2>
+            <p class="description">جرّب تاني، أو علّم لَمحة إجابة جديدة عشان تقدر تميّز بين الاحتمالات بشكل أفضل.</p>
+            <div class="actions">
+              ${button("حاول تاني", "retry-question", "primary")}
+              ${button("الرئيسية", "home", "secondary")}
+            </div>
+          </div>`;
+      } else if (stage === "question") {
+        const progress = computeQuestionProgress();
+        const confidence = Math.round(computeConfidence());
+        const moodMessage = askedQuestions.size < 2
+          ? "أنا ببدأ بأسئلة عامة للتأكد من الاتجاه الصحيح"
+          : askedQuestions.size < 5
+            ? "أنا باخد خطوات متدرجة وأضيق الاحتمالات"
+            : "أنا تقريبًا وصلت لوجهة السؤال النهائي";
+        game.innerHTML = `
+          <div class="content">
+            <button class="hint-toggle" type="button" data-action="toggle-hint" aria-label="${hintVisible ? "إخفاء التلميح" : "إظهار تلميح"}" aria-expanded="${hintVisible}" title="تلميح">
+              <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true">
+                <path d="M9 21h6m-5 0v-2h4v2m-5-4.1c-1.6-1.1-2.6-2.9-2.6-5a5.6 5.6 0 1 1 11.2 0c0 2.1-1 3.9-2.6 5-.7.5-1.1 1.2-1.1 2.1h-3.8c0-.9-.4-1.6-1.1-2.1Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/>
+              </svg>
+            </button>
+            <div class="orb" aria-hidden="true">${renderRobotFace("question")}</div>
+            <p class="eyebrow">السؤال ${askedQuestions.size + 1} • مستوى التدرّج</p>
+            <h2>هل ${escapeHtml(questionText(currentQuestion))}؟</h2>
+            <p class="description">${moodMessage}</p>
+            <div class="progress" aria-label="تقدّم اللعبة">
+              <div class="progress-bar" style="width: ${progress}%"></div>
+            </div>
+            <div class="confidence-box"><span>تقدير الجولة</span><strong>${confidence}%</strong></div>
+            ${hintVisible ? `<p class="hint-message" role="status">${escapeHtml(getHintText())}</p>` : ""}
+            <div class="actions answer-actions" role="group" aria-label="اختار إجابتك">
+              ${button("الظاهر لا", "answer-likely-no", "answer-likely-no")}
+              ${button("من الممكن", "answer-possible", "answer-possible")}
+              ${button("اه", "answer-yes", "answer-yes")}
+              ${button("لا", "answer-no", "answer-no")}
+              ${button("أنا لا أعلم", "answer-unknown", "answer-unknown")}
+            </div>
+          </div>`;
+      } else if (stage === "guess") {
+        const confidence = candidates.length === 1 ? 99 : Math.min(60, Math.round(computeConfidence()));
+        game.innerHTML = `
+          <div class="content">
+            <div class="orb" aria-hidden="true">${renderRobotFace("guess")}</div>
+            <p class="eyebrow">وصلت لتخمين!</p>
+            <h2>هل اللي في بالك هو ${escapeHtml(candidates[0].name)}؟</h2>
+            <div class="confidence-box"><span>تقدير الجولة</span><strong>${confidence}%</strong></div>
+            <div class="actions">${button("أيوه، صح!", "guess-yes")}${button("لأ، غلط", "guess-no", "no")}</div>
+          </div>`;
+      } else if (stage === "learn-name") {
+        const message = wrongGuess
+          ? `كنت فاكر إنك بتفكر في ${escapeHtml(wrongGuess)}. إيه الحاجة اللي كانت في بالك؟`
+          : "مش قادر أحدد تخميني. إيه الحاجة اللي كانت في بالك؟";
+        const options = candidates.length > 1
+          ? `<p class="possibilities">الاحتمالات اللي عندي: ${candidates.map(character => escapeHtml(character.name)).join("، ")}</p>`
+          : "";
+        game.innerHTML = `
+          <div class="content">
+            <div class="orb" aria-hidden="true">${renderRobotFace("learn-name")}</div>
+            <p class="eyebrow">كل يوم بتعلّم حاجة جديدة</p>
+            <h2>علّمني إجابة جديدة</h2>
+            <p class="description">${message}</p>
+            ${options}
+            <form id="name-form" class="field">
+              <label for="character-name">اسم الحاجة</label>
+              <input id="character-name" name="name" maxlength="80" required autofocus placeholder="مثال: أسد">
+              <div class="actions">${button("كمّل", "submit-name")}</div>
+            </form>
+          </div>`;
+      } else if (stage === "learn-question") {
+        game.innerHTML = `
+          <div class="content">
+            <div class="orb" aria-hidden="true">${renderRobotFace("learn-question")}</div>
+            <p class="eyebrow">خطوة ١ من ٢</p>
+            <h2>سؤال يميّزها</h2>
+            <p class="description">اكتب سؤال إجابته بنعم أو لا، ويساعدني أفرّق بين <strong>${escapeHtml(targetCharacter.name)}</strong>${wrongGuess ? ` و<strong>${escapeHtml(wrongGuess)}</strong>` : " والحاجات التانية"}.</p>
+            <form id="question-form" class="field">
+              <label for="new-question">السؤال</label>
+              <input id="new-question" name="question" maxlength="120" required autofocus placeholder="مثال: هل له جناحان؟">
+              <div class="actions">${button("كمّل", "submit-question")}</div>
+            </form>
+          </div>`;
+      } else if (stage === "learn-answer") {
+        game.innerHTML = `
+          <div class="content">
+            <div class="orb" aria-hidden="true">${renderRobotFace("learn-answer")}</div>
+            <p class="eyebrow">خطوة ٢ من ٢</p>
+            <h2>إجابتك إيه؟</h2>
+            <div class="question-card">هل ${escapeHtml(questionText(newQuestion))}؟</div>
+            <p class="description">بالنسبة لـ ${escapeHtml(targetCharacter.name)}.</p>
+            <div class="actions">${button("نعم", "learn-yes")}${button("لا", "learn-no", "secondary")}</div>
+          </div>`;
+      } else if (stage === "learn-attributes") {
+        const question = remainingQuestions[0];
+        game.innerHTML = `
+          <div class="content">
+            <div class="orb" aria-hidden="true">${renderRobotFace("learn-attributes")}</div>
+            <p class="eyebrow">سؤال ${6 - remainingQuestions.length} من ٥ للتعلّم</p>
+            <h2>بالنسبة لـ ${escapeHtml(targetCharacter.name)}...</h2>
+            <div class="question-card">هل ${escapeHtml(questionText(question))}؟</div>
+            <div class="actions">${button("نعم", "attribute-yes")}${button("لا", "attribute-no", "secondary")}</div>
+          </div>`;
+      } else if (stage === "learned") {
+        game.innerHTML = `
+          <div class="content">
+            <div class="orb" aria-hidden="true">${renderRobotFace("learned")}</div>
+            <p class="eyebrow">تم الحفظ بنجاح</p>
+            <h2>اتعلّمت ${escapeHtml(targetCharacter.name)}!</h2>
+            <p class="description">هفتكرها المرة الجاية على نفس المتصفح.</p>
+            <div class="actions">${button("نلعب تاني", "home")}</div>
+          </div>`;
+      } else if (stage === "correct") {
+        game.innerHTML = `
+          <div class="content">
+            <div class="orb" aria-hidden="true">${renderRobotFace("correct")}</div>
+            <p class="eyebrow">يا سلام!</p>
+            <h2>عرفتها صح!</h2>
+            <p class="description">لَمحة كسبت الجولة دي.</p>
+            <div class="actions">${button("نلعب تاني", "home")}</div>
+          </div>`;
+      }
+    }
+
+    game.addEventListener("submit", event => {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      if (event.target.id === "name-form") submitName(formData.get("name"));
+      if (event.target.id === "question-form") submitDistinguishingQuestion(formData.get("question"));
+    });
+
+    game.addEventListener("click", event => {
+      const action = event.target.closest("[data-action]")?.dataset.action;
+      if (!action) return;
+      if (action === "select-mode") {
+        selectedGameMode = event.target.closest("[data-action]").dataset.mode;
+        startGame();
+        return;
+      }
+      if (action === "toggle-hint") {
+        hintVisible = !hintVisible;
+        render();
+        return;
+      }
+      if (action === "start") startGame();
+      if (action === "retry-question") requestNextQuestion();
+      if (action === "submit-name") document.querySelector("#name-form").requestSubmit();
+      if (action === "submit-question") document.querySelector("#question-form").requestSubmit();
+      if (action === "answer-likely-no") answerQuestion("الظاهر لا");
+      if (action === "answer-possible") answerQuestion("من الممكن");
+      if (action === "answer-yes") answerQuestion("نعم");
+      if (action === "answer-no") answerQuestion("لا");
+      if (action === "answer-unknown") answerQuestion("أنا لا أعلم");
+      if (action === "guess-yes") { playTone(780, 120, "triangle", 0.03); stopMusic(); stage = "correct"; render(); }
+      if (action === "guess-no") { playTone(220, 120, "square", 0.025); beginLearning(candidates[0].name); }
+      if (action === "learn-yes" || action === "learn-no") finishLearning(action === "learn-yes" ? "نعم" : "لا");
+      if (action === "attribute-yes" || action === "attribute-no") answerRemainingQuestion(action === "attribute-yes" ? "نعم" : "لا");
+      if (action === "home") { playTone(500, 100, "sine", 0.02); stopMusic(); stage = "home"; render(); }
+    });
+
+    document.querySelector("#music-toggle").addEventListener("click", () => {
+      musicEnabled = !musicEnabled;
+      try { localStorage.setItem(MUSIC_KEY, musicEnabled ? "on" : "off"); } catch (error) {}
+      updateMusicToggle();
+      if (musicEnabled) startMusic();
+      else stopMusic();
+    });
+
+    document.querySelector("#sound-toggle").addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      try { localStorage.setItem(SOUND_KEY, soundEnabled ? "on" : "off"); } catch (error) {}
+      updateSoundToggle();
+      if (soundEnabled) playTone(740, 100, "sine", 0.025);
+    });
+
+    updateMusicToggle();
+    updateSoundToggle();
+    render();
+    refreshAiStatus();
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(error => console.warn("تعذر تفعيل وضع عدم الاتصال:", error));
+      });
+    }
+  </script>
+</body>
+</html>
